@@ -1,0 +1,2 @@
+# trent
+Transducers for python
