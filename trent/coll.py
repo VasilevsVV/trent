@@ -1,25 +1,13 @@
-from abc import ABC, abstractmethod
-from typing import Any, Callable, Iterable, Iterator, Optional, TypeVar
+from __future__ import annotations
+from functools import reduce
+from itertools import chain
+from pprint import pprint
+from typing import Callable, Iterable, Iterator, Optional, TypeVar, overload
 
 T = TypeVar('T')
 T1 = TypeVar('T1')
+S = TypeVar('S')
 
-class _coll(ABC, Iterable[T]):
-    @abstractmethod
-    def map(self, f: Callable[[T], T1]) -> Any:...
-    
-    @property
-    @abstractmethod
-    def collection(self) -> Iterable[T]: ...
-    
-    @abstractmethod
-    def __iter__(self) -> Iterator[T]: ...
-    
-    @abstractmethod
-    def __next__(self) -> T: ...
-    
-    @abstractmethod
-    def __repr__(self) -> str: ...
 
 class NestedIterationExceprion(Exception):
     def __repr__(self) -> str:
@@ -27,7 +15,7 @@ class NestedIterationExceprion(Exception):
 
 
 
-class coll(_coll, Iterable[T]):
+class coll(Iterable[T]):
     def __init__(self, collection: Optional[Iterable[T]] = None) -> None:
         self.__coll: Iterable[T]
         self.__buffer: list[T]
@@ -42,8 +30,26 @@ class coll(_coll, Iterable[T]):
     def collection(self) -> Iterable[T]:
         return self.__coll
     
-    def map(self, f: Callable[[T], T1]) -> _coll[T1]:
+    def map(self, f: Callable[[T], T1]) -> coll[T1]:
         return coll(map(f, self.__coll))
+    
+    
+    def mapcat(self, f: Callable[[T], Iterable[T1]]) -> coll[T1]:
+        m = map(f, self.__coll)
+        m = reduce(chain, m)
+        return coll(m)
+    
+    
+    @overload
+    def reduce(self, f: Callable[[S, T], S]) -> S|T: ...
+    
+    @overload
+    def reduce(self, f: Callable[[S, T], S], initial: S) -> S: ...
+    
+    def reduce(self, f: Callable[[S, T], S], initial: Optional[S] = None) -> S | T:
+        if initial is None:
+            return reduce(f, self)
+        return reduce(f, self, initial)
     
     
     def __iter__(self):
@@ -69,5 +75,11 @@ class coll(_coll, Iterable[T]):
         return f'coll({lst})'
 
 
+
+
+
 if __name__ == '__main__':
-    c = coll([1,2,3,4]).map(lambda x: x+1)
+    def s_add(s1: str, s2: str):
+        return s1 + s2
+    c = coll([1,2,3,4]).map(lambda x: x+1).mapcat(lambda x: range(x)).map(str).reduce(s_add)
+    pprint(c)
