@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import itertools as it
 from functools import reduce
 from itertools import chain
 from pprint import pprint
@@ -14,7 +13,6 @@ S = TypeVar('S')
 class NestedIterationExceprion(Exception):
     def __repr__(self) -> str:
         return 'Nested iteration over `coll` class is invalid !!!'
-
 
 
 class coll(Iterable[T]):
@@ -43,7 +41,7 @@ class coll(Iterable[T]):
     
     
     def concat(self, *__iterables: Iterable[T]) -> coll[T]:
-        res = coll()
+        res = coll(self.__coll)
         for __it in __iterables:
             res.extend_(__it)
         return res
@@ -73,6 +71,7 @@ class coll(Iterable[T]):
         """        
         if isinstance(__iterable, coll):
             self.__coll = chain(self.__coll, __iterable.collection)
+            return self
         self.__coll = chain(self.__coll, __iterable)
         return self
     
@@ -83,12 +82,12 @@ class coll(Iterable[T]):
     
     
     @overload
-    def reduce(self, f: Callable[[S, T], S]) -> S|T: ...
+    def reduce(self, f: Callable[[T, T], T]) -> T: ...
     
     @overload
     def reduce(self, f: Callable[[S, T], S], initial: S) -> S: ...
     
-    def reduce(self, f: Callable[[S, T], S], initial: Optional[S] = None) -> S | T:
+    def reduce(self, f: Callable, initial: Optional[S] = None) -> S | T:
         if initial is None:
             return reduce(f, self)
         return reduce(f, self, initial)
@@ -108,6 +107,7 @@ class coll(Iterable[T]):
             val = next(self.__iter)
         except StopIteration:
             self.__coll = self.__buffer
+            self.__is_iterated = False
             raise StopIteration
         self.__buffer.append(val)
         return val
@@ -125,4 +125,8 @@ if __name__ == '__main__':
         return s1 + s2
     c = coll([1,2,3,4])
     c = c.concat(b'56')
-    pprint(c)
+    
+    def add(a: str, b: int):
+        return a + str(b)
+    pprint(c.reduce(add, ''))
+    print(c)
