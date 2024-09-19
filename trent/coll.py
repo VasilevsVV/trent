@@ -8,36 +8,16 @@ from pprint import pprint
 from time import sleep
 from typing import Any, Callable, Iterable, Iterator, Optional, TypeVar, overload
 
+from trent.concur import DEFAULT_THREAD_COUNT, TRENT_THREADPOOL
+from trent.func import identity
+
 T = TypeVar('T')
 T1 = TypeVar('T1')
 S = TypeVar('S')
 
 
-def __cpu_count():
-    try:
-        import psutil
-        return psutil.cpu_count()
-    except (ImportError, NotImplementedError):
-        pass
-    
-    try:
-        import multiprocessing
-        return multiprocessing.cpu_count()
-    except (ImportError, NotImplementedError):
-        pass
-    return 8
-
-
-DEFAULT_THREAD_COUNT = __cpu_count()
-
-
 def __make_threadpool(threads: int = DEFAULT_THREAD_COUNT):
     return conc.ThreadPoolExecutor(threads)
-
-
-TRENT_THREADPOOL = conc.ThreadPoolExecutor(DEFAULT_THREAD_COUNT, 'trent')
-    
-
 
 
 class NestedIterationExceprion(Exception):
@@ -73,7 +53,7 @@ class coll(Iterable[T]):
         return coll(__map)
     
     
-    def pmap_(self, f, threads=DEFAULT_THREAD_COUNT):
+    def pmap_(self, f: Callable[[T], S], threads=DEFAULT_THREAD_COUNT) -> coll[S]:
         assert threads >= 1, 'Async Thread count CAN NOT be < 1'
         if threads == 1:
             return self.map(f)
@@ -134,9 +114,17 @@ class coll(Iterable[T]):
     # =================================================================
     #           COLLECTING
     
+    def to_list(self) -> list[T]:
+        return list(self.__coll)
+    
+    
+    def collect(self, f: Callable[[Iterable[T]], S] = identity) -> list[T] | S:
+        return f(self.to_list())
+    
+    
+    
     @overload
     def reduce(self, f: Callable[[T, T], T]) -> T: ...
-    
     @overload
     def reduce(self, f: Callable[[S, T], S], initial: S) -> S: ...
     
@@ -145,6 +133,10 @@ class coll(Iterable[T]):
             return reduce(f, self)
         return reduce(f, self, initial)
     
+    
+    
+    # ================================================================
+    #           ITERATION
     
     def __iter__(self):
         if self.__is_iterated:
@@ -162,7 +154,9 @@ class coll(Iterable[T]):
             raise StopIteration
     
     def __repr__(self) -> str:
+        # Persisting collection values. For easier debugging.
         lst = list(self)
+        self.__coll = lst
         return f'coll({lst})'
 
 
