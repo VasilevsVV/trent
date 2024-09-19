@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import concurrent.futures as conc
 from functools import reduce, cache
-from funcy import filter
+from funcy import filter, complement
 from itertools import chain
 from pprint import pprint
 from time import sleep
@@ -66,6 +66,15 @@ class coll(Iterable[T]):
         m = map(f, self.__coll)
         m = reduce(chain, m)
         return coll(m)
+    
+    
+    def filter(self, f: Callable[[T], Any]) -> coll[T]:
+        return coll(filter(f, self.__coll))
+    
+    
+    def remove(self, f: Callable[[T], Any]) -> coll[T]:
+        _f = complement(f)
+        return self.filter(_f)
     
     
     # ==================================================================
