@@ -45,7 +45,7 @@ class NestedIterationExceprion(Exception):
         return 'Nested iteration over `coll` class is invalid !!!'
 
 
-class icoll(Iterable[T]):
+class coll(Iterable[T]):
     def __init__(self, collection: Optional[Iterable[T]] = None) -> None:
         self.__coll: Iterable[T]
         self.__buffer: list[T]
@@ -64,13 +64,13 @@ class icoll(Iterable[T]):
     # ==================================================================
     #           MAPS
     
-    def map(self, f: Callable[[T], T1]) -> icoll[T1]:
-        return icoll(map(f, self.__coll))
+    def map(self, f: Callable[[T], T1]) -> coll[T1]:
+        return coll(map(f, self.__coll))
     
     
-    def pmap(self, f: Callable[[T], S]) -> icoll[S]:
+    def pmap(self, f: Callable[[T], S]) -> coll[S]:
         __map = TRENT_THREADPOOL.map(f, self.__coll)
-        return icoll(__map)
+        return coll(__map)
     
     
     def pmap_(self, f, threads=DEFAULT_THREAD_COUNT):
@@ -79,39 +79,39 @@ class icoll(Iterable[T]):
             return self.map(f)
         with conc.ThreadPoolExecutor(threads) as p:
             __map = p.map(f, self.__coll)
-        return icoll(__map)
+        return coll(__map)
     
     
-    def mapcat(self, f: Callable[[T], Iterable[T1]]) -> icoll[T1]:
+    def mapcat(self, f: Callable[[T], Iterable[T1]]) -> coll[T1]:
         m = map(f, self.__coll)
         m = reduce(chain, m)
-        return icoll(m)
+        return coll(m)
     
     
     # ==================================================================
     #           TRANSFORMATIONS
     
-    def concat(self, *__iterables: Iterable[T]) -> icoll[T]:
-        res = icoll(self.__coll)
+    def concat(self, *__iterables: Iterable[T]) -> coll[T]:
+        res = coll(self.__coll)
         for __it in __iterables:
             res.extend_(__it)
         return res
     
-    def extend(self, __iterable: Iterable[T]) -> icoll[T]:
+    def extend(self, __iterable: Iterable[T]) -> coll[T]:
         return self.concat(__iterable)
     
     
-    def append(self, __val: T) -> icoll[T]:
-        return icoll(self.__coll).append_(__val)
+    def append(self, __val: T) -> coll[T]:
+        return coll(self.__coll).append_(__val)
 
     
-    def __add__(self, __iter: Iterable[T]) -> icoll[T]:
+    def __add__(self, __iter: Iterable[T]) -> coll[T]:
         return self.concat(__iter)
     
     # ===============================================================
     #   IN_PLACE TRANSFORMATIONS
     
-    def extend_(self, __iterable: Iterable[T]) -> icoll[T]:
+    def extend_(self, __iterable: Iterable[T]) -> coll[T]:
         """In-place extend. Addes `__iterable` to the end of `coll`.
 
         Args:
@@ -120,13 +120,13 @@ class icoll(Iterable[T]):
         Returns:
             coll[T]: Self
         """        
-        if isinstance(__iterable, icoll):
+        if isinstance(__iterable, coll):
             self.__coll = chain(self.__coll, __iterable.collection)
             return self
         self.__coll = chain(self.__coll, __iterable)
         return self
     
-    def append_(self, __val: T) -> icoll[T]:
+    def append_(self, __val: T) -> coll[T]:
         self.extend_([__val])
         return self
     
@@ -149,7 +149,6 @@ class icoll(Iterable[T]):
     def __iter__(self):
         if self.__is_iterated:
             raise NestedIterationExceprion
-        self.__buffer = []
         self.__iter = iter(self.__coll)
         self.__is_iterated = True
         return self
@@ -157,21 +156,20 @@ class icoll(Iterable[T]):
     
     def __next__(self) -> T:
         try:
-            val = next(self.__iter)
+            return next(self.__iter)
         except StopIteration:
-            self.__coll = self.__buffer
             self.__is_iterated = False
             raise StopIteration
-        self.__buffer.append(val)
-        return val
     
     def __repr__(self) -> str:
         lst = list(self)
         return f'coll({lst})'
 
 
-class coll(icoll, Iterable[T]):
+
+class pcoll(coll, Iterable[T]):
     def __init__(self, collection: Optional[Iterable[T]] = None) -> None:
+        self.__buffer: list[T]
         super().__init__(collection)
     
     
