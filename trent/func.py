@@ -18,6 +18,20 @@ def identity(val):
     return val
 
 
+# def _unpack_group(group):
+#     key, vals = group
+#     return [(key, v) for v in vals]
+
+# def _make_group_pair(f, val_fn: Callable[[Any], Any] = _identity):
+#     return lambda val: (f(val), val_fn(val))
+
+# def _make_pair_fn(f_key, f_val):
+#     return lambda val: (f_key(val), f_val(val))
+
+
+# =======================================================
+
+
 def _nth(coll:Optional[Iterable[_T]], n:int, position_name) -> Optional[_T]:
     if (isinstance(coll, Sequence)):
         if len(coll) > n:
