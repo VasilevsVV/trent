@@ -105,3 +105,9 @@ def test_takewhile():
     c = icoll(range(10000))
     res = c.takewhile(lambda n: n < 6)
     assert list(res) == [0, 1, 2, 3, 4, 5]
+
+
+def test_cat():
+    c = icoll([[1, 2, 3], [4, 5]])
+    res = c.cat()
+    assert list(res) == [1, 2, 3, 4, 5]
