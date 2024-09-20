@@ -45,3 +45,13 @@ def test_group_by_1():
                     1: [10, 11, 12, 13, 14, 15, 16, 17, 18, 19],
                     2: [20, 21, 22, 23, 24, 25, 26, 27, 28, 29]
                     }
+
+
+def test_rangify():
+    c = icoll(range(10))
+    res = c.rangify()
+    assert list(res) == [(0, 1), (1, 2), (2, 3), (3, 4), (4, 5), (5, 6), (6, 7), (7, 8), (8, 9)]
+
+
+if __name__ == '__main__':
+    test_rangify()
