@@ -21,4 +21,4 @@ def cpu_count():
 
 
 DEFAULT_THREAD_COUNT = cpu_count()
-TRENT_THREADPOOL = conc.ThreadPoolExecutor(DEFAULT_THREAD_COUNT, 'trent')
+TRENT_THREADPOOL = conc.ThreadPoolExecutor(DEFAULT_THREAD_COUNT * 2, 'trent')
