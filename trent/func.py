@@ -1,4 +1,4 @@
-from typing import Any, Iterable, Optional, Sequence, TypeVar
+from typing import Any, Callable, Iterable, Optional, Sequence, TypeVar, overload
 
 
 class MissingValueException(Exception):
@@ -14,7 +14,7 @@ class MissingValueException(Exception):
 _T = TypeVar('_T')
 
 
-def identity(val):
+def identity(val: _T) -> _T:
     return val
 
 
@@ -22,8 +22,6 @@ def identity(val):
 #     key, vals = group
 #     return [(key, v) for v in vals]
 
-# def _make_group_pair(f, val_fn: Callable[[Any], Any] = _identity):
-#     return lambda val: (f(val), val_fn(val))
 
 # def _make_pair_fn(f_key, f_val):
 #     return lambda val: (f_key(val), f_val(val))

@@ -72,17 +72,7 @@ class icoll(Iterable[T]):
     
     
     
-    # def group_by(self, f:Callable[[Any], Hashable], val_fn: Callable[[Any], Any] = _identity):
-    #     pairs = self.map(_make_group_pair(f, val_fn)).lst()
-    #     res: dict[Hashable, list] = {}
-    #     for p in pairs:
-    #         k,v = p
-    #         if k in res:
-    #             res[k].append(v)
-    #         else:
-    #             res[k] = [v]
-    #     self._collection = list(res.items())
-    #     return self
+    
     
     # def groupmap(self, f:Optional[Callable[[Any, Any], Any]]=None):
     #     pairs = self.mapcat(_unpack_group)
@@ -148,7 +138,7 @@ class icoll(Iterable[T]):
     
     
     def catmap(self, f: Callable[[Any], T1]) -> icoll[T1]:
-        return self.mapcat(identity).map(f)
+        return self.mapcat(identity).map(f) # type: ignore
     
     
     def filter(self, f: Callable[[T], Any]) -> icoll[T]:
@@ -182,6 +172,25 @@ class icoll(Iterable[T]):
     
     def pairmap(self, f:Callable[[Any, Any], T1]) -> icoll[T1]:
         return self.map(lambda p: f(first(p), second(p)))
+    
+    
+    def group_by_to_dict(self, f:Callable[[T], T1], val_fn: Callable[[T], T2] = identity) -> Dict[T1, list[T2]]:
+        def __group(val: T) -> Tuple[T1, T2]:
+            return (f(val), val_fn(val))
+        pairs = self.map(__group).to_list()
+        res: dict[T1, list[T2]] = {}
+        for p in pairs:
+            k,v = p
+            if k in res:
+                res[k].append(v)
+            else:
+                res[k] = [v]
+        return res
+    
+    
+    def group_by(self, f:Callable[[T], T1], val_fn: Callable[[T], T2] = identity) -> icoll[tuple[T1, list[T2]]]:
+        d = self.group_by_to_dict(f, val_fn)
+        return self.__step(d.items())
     
     
     # ==================================================================
@@ -246,7 +255,7 @@ class icoll(Iterable[T]):
         return list(self.__coll)
     
     
-    def collect(self, f: Callable[[Iterable[T]], S] = identity) -> list[T] | S:
+    def collect(self, f: Callable[[list[T]], S] = identity) -> S:
         return f(self.to_list())
     
     
@@ -285,6 +294,13 @@ class icoll(Iterable[T]):
         # Persisting collection values. For easier debugging.
         self.__coll = list(self.__coll)
         return f'coll({self.__coll})'
+    
+    
+    # ===============================================================
+    #               UTIL
+    
+    def __group_pair_fn(self, f: Callable[[T], T1], val_fn: Callable[[T], T2] = identity) -> Callable[[T], Tuple[T1, T2]]:
+        return lambda val: (f(val), val_fn(val))
 
 
 class paired_coll(icoll, Iterable[Tuple[T1, T2]]):
