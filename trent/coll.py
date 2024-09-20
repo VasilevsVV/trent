@@ -2,14 +2,15 @@ from __future__ import annotations
 
 import concurrent.futures as conc
 from functools import reduce, cache
-from funcy import filter, complement
+from funcy import filter, complement, take
 from itertools import chain
 from pprint import pprint
 from time import sleep
 from typing import Any, Callable, Dict, Generic, Hashable, Iterable, Iterator, Optional, Tuple, TypeVar, overload
+from itertools import takewhile
 
 from trent.concur import DEFAULT_THREAD_COUNT, TRENT_THREADPOOL
-from trent.func import first, identity, second
+from trent.func import first, first_, identity, second, second_
 
 T = TypeVar('T')
 T1 = TypeVar('T1')
@@ -65,12 +66,8 @@ class icoll(Iterable[T]):
             raise Exception(f'Invalid collection type: {type(collection)}. Expected Iterable!')
     
     
-    # def take(self, n):
-    #     self._collection = fn.take(n, self.lst())
-    #     return self
-    
-    # def takewhile(self, predicate:Callable[[Any], bool]):
-    #     self._collection = fn.takewhile(predicate, self.collect()) # type: ignore
+    def __step(self, __coll: Iterable[S]) -> icoll[S]:
+        return icoll(__coll)
     
     
     
@@ -126,13 +123,13 @@ class icoll(Iterable[T]):
     # ==================================================================
     #           MAPS
     
-    def map(self, f: Callable[[T], T1]) -> icoll[T1]:
-        return icoll(map(f, self.__coll))
+    def map(self, f: Callable[[T], S]) -> icoll[S]:
+        return self.__step(map(f, self.__coll))
     
     
     def pmap(self, f: Callable[[T], S]) -> icoll[S]:
         __map = TRENT_THREADPOOL.map(f, self.__coll)
-        return icoll(__map)
+        return self.__step(__map)
     
     
     def pmap_(self, f: Callable[[T], S], threads=DEFAULT_THREAD_COUNT) -> icoll[S]:
@@ -141,17 +138,13 @@ class icoll(Iterable[T]):
             return self.map(f)
         with conc.ThreadPoolExecutor(threads) as p:
             __map = p.map(f, self.__coll)
-        return icoll(__map)
-    
-    
-    def pairmap(self, f:Callable[[Optional[T1], Optional[T2]], S]) -> icoll[S]:
-        return self.map(lambda p: f(first(p), second(p)))
+        return self.__step(__map)
     
     
     def mapcat(self, f: Callable[[T], Iterable[T1]]) -> icoll[T1]:
         m = map(f, self.__coll)
         m = reduce(chain, m)
-        return icoll(m)
+        return self.__step(m)
     
     
     def catmap(self, f: Callable[[Any], T1]) -> icoll[T1]:
@@ -159,7 +152,7 @@ class icoll(Iterable[T]):
     
     
     def filter(self, f: Callable[[T], Any]) -> icoll[T]:
-        return icoll(filter(f, self.__coll))
+        return self.__step(filter(f, self.__coll))
     
     
     def remove(self, f: Callable[[T], Any]) -> icoll[T]:
@@ -176,11 +169,26 @@ class icoll(Iterable[T]):
         return self.filter(__pred)
     
     
+    def take(self, n: int)-> icoll[T]:
+        assert n >= 0, 'You can only `take` >= 0 elements!'
+        return self.__step(take(n, self.__coll))
+    
+    def takewhile(self, predicate:Callable[[T], bool]) -> icoll[T]:
+        return self.__step(takewhile(predicate, self.__coll))
+    
+    
+    # ==================================================================
+    #           PAIRED
+    
+    def pairmap(self, f:Callable[[Any, Any], T1]) -> icoll[T1]:
+        return self.map(lambda p: f(first(p), second(p)))
+    
+    
     # ==================================================================
     #           TRANSFORMATIONS
     
     def concat(self, *__iterables: Iterable[T]) -> icoll[T]:
-        res = icoll(self.__coll)
+        res = self.__step(self.__coll)
         for __it in __iterables:
             res.extend_(__it)
         return res
@@ -189,8 +197,16 @@ class icoll(Iterable[T]):
         return self.concat(__iterable)
     
     
+    def conj(self, *vals: T):
+        return self.concat(vals)
+    
+    
     def append(self, __val: T) -> icoll[T]:
-        return icoll(self.__coll).append_(__val)
+        return self.__step(self.__coll).append_(__val)
+    
+    
+    def cons(self, __val: T):
+        return self.__step(chain([__val], self.__coll))
 
     
     def __add__(self, __iter: Iterable[T]) -> icoll[T]:
@@ -217,6 +233,10 @@ class icoll(Iterable[T]):
     def append_(self, __val: T) -> icoll[T]:
         self.extend_([__val])
         return self
+    
+    
+    def cons_(self, __val: T):
+        self.__coll = chain([__val], self.__coll)
     
     
     # =================================================================
@@ -263,9 +283,8 @@ class icoll(Iterable[T]):
     
     def __repr__(self) -> str:
         # Persisting collection values. For easier debugging.
-        lst = list(self)
-        self.__coll = lst
-        return f'coll({lst})'
+        self.__coll = list(self.__coll)
+        return f'coll({self.__coll})'
 
 
 class paired_coll(icoll, Iterable[Tuple[T1, T2]]):
@@ -284,6 +303,14 @@ class paired_coll(icoll, Iterable[Tuple[T1, T2]]):
             return collection
         else:
             raise Exception(f'Invalid collection type: {type(collection)}. Expected Iterable!')
+    
+    
+    # def __step(self, __coll: Iterable[Tuple[T1, T2]]) -> paired_coll[T1, T2]:
+    #     return paired_coll(__coll)
+
+    
+    def pairmap(self, f:Callable[[T1, T2], S]) -> icoll[S]:
+        return self.map(lambda p: f(first_(p), second_(p)))
 
 
 
