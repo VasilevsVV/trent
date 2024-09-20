@@ -92,13 +92,7 @@ class icoll(Iterable[T]):
     def __step(self, __coll: Iterable[S]) -> icoll[S]:
         return icoll(__coll)
     
-    
-    
-    
-    
-    
-    
-    
+
     # def grouppmap(self, f:Callable[[Any, Any], Any]):
     #     pairs = self.mapcat(_unpack_group)
     #     return pairs.pairpmap(f)
@@ -109,13 +103,7 @@ class icoll(Iterable[T]):
     
     # def cat(self):
     #     return self.mapcat(_identity)
-    
-    
-    
-    
-    
-    
-    
+
     # ==================================================================
     #           MAPS
     
