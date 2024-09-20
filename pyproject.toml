@@ -24,6 +24,10 @@ dependencies = [
 ]
 
 
+[project.urls]
+Homepage = "https://github.com/VasilevsVV/trent"
+Issues = "https://github.com/VasilevsVV/trent/issues"
+
 
 
 [tool.pytest.ini_options]
