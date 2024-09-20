@@ -10,7 +10,7 @@ from typing import Any, Callable, Dict, Generic, Hashable, Iterable, Iterator, O
 from itertools import takewhile
 
 from trent.concur import DEFAULT_THREAD_COUNT, TRENT_THREADPOOL
-from trent.func import first, first_, identity, second, second_
+from trent.func import MissingValueException, first, first_, identity, second, second_
 
 T = TypeVar('T')
 T1 = TypeVar('T1')
@@ -18,9 +18,22 @@ T2 = TypeVar('T2')
 S = TypeVar('S')
 
 
+class __no_value():
+    def __init__(self) -> None:
+        pass
+
+
 class NestedIterationExceprion(Exception):
     def __repr__(self) -> str:
         return 'Nested iteration over `coll` class is invalid !!!'
+
+
+class EmptyCollectionException(Exception):
+    def __init__(self, msg: str) -> None:
+        self.__msg = msg
+    
+    def __repr__(self) -> str:
+        return f'Collection is empty! {self.__msg}'
 
 
 class DistinctFilter(Generic[T]):
@@ -35,6 +48,16 @@ class DistinctFilter(Generic[T]):
             return False
         self.__encounters.add(__val)
         return True
+
+
+class Rangifier(Generic[T]):
+    def __init__(self, init_val: T) -> None:
+        self.__prev: T = init_val
+    
+    def __call__(self, val: T) -> Tuple[T, T]:
+        res = (self.__prev, val)
+        self.__prev = val
+        return res
 
 
 class icoll(Iterable[T]):
@@ -74,22 +97,12 @@ class icoll(Iterable[T]):
     
     
     
-    # def groupmap(self, f:Optional[Callable[[Any, Any], Any]]=None):
-    #     pairs = self.mapcat(_unpack_group)
-    #     if f:
-    #         return pairs.pairmap(f)
-    #     return pairs
+    
     
     # def grouppmap(self, f:Callable[[Any, Any], Any]):
     #     pairs = self.mapcat(_unpack_group)
     #     return pairs.pairpmap(f)
     
-    # def map_to_pair(self, f_key, f_val=_no_value()):
-    #     f_val = _identity if isinstance(f_val, _no_value) else f_val
-    #     return self.map(_make_pair_fn(f_key, f_val))
-    
-    # def pairmap(self, f:Callable[[Any, Any], Any]):
-    #     return self.map(lambda p: f(first(p), second(p)))
     
     # def pairpmap(self, f:Callable[[Any, Any], Any]):
     #     return self.pmap(lambda p: f(first(p), second(p)))
@@ -97,17 +110,10 @@ class icoll(Iterable[T]):
     # def cat(self):
     #     return self.mapcat(_identity)
     
-    # def rangify(self):
-    #     self.collect()
-    #     self._collection = zip(self._collection, list(self._collection)[1:])
-    #     return self
     
     
-    # def apply(self, f:Callable[[Any], Optional[Any]]):
-    #     def __apply(el: Any):
-    #         f(el)
-    #         return el
-    #     return self.map(__apply)
+    
+    
     
     
     # ==================================================================
@@ -137,8 +143,19 @@ class icoll(Iterable[T]):
         return self.__step(m)
     
     
+    def cat(self) -> icoll[Any]:
+        return self.mapcat(identity) # type: ignore
+    
+    
     def catmap(self, f: Callable[[Any], T1]) -> icoll[T1]:
-        return self.mapcat(identity).map(f) # type: ignore
+        return self.cat().map(f)
+    
+    
+    def apply(self, f:Callable[[T], Optional[Any]]) -> icoll[T]:
+        def __apply(el: T) -> T:
+            f(el)
+            return el
+        return self.map(__apply)
     
     
     def filter(self, f: Callable[[T], Any]) -> icoll[T]:
@@ -174,6 +191,12 @@ class icoll(Iterable[T]):
         return self.map(lambda p: f(first(p), second(p)))
     
     
+    def map_to_pair(self, f_key: Callable[[T], T1], f_val: Callable[[T], T2] = identity) -> icoll[Tuple[T1, T2]]:
+        def __pair(val: T) -> Tuple[T1, T2]:
+            return (f_key(val), f_val(val))
+        return self.map(__pair)
+    
+    
     def group_by_to_dict(self, f:Callable[[T], T1], val_fn: Callable[[T], T2] = identity) -> Dict[T1, list[T2]]:
         def __group(val: T) -> Tuple[T1, T2]:
             return (f(val), val_fn(val))
@@ -191,6 +214,31 @@ class icoll(Iterable[T]):
     def group_by(self, f:Callable[[T], T1], val_fn: Callable[[T], T2] = identity) -> icoll[tuple[T1, list[T2]]]:
         d = self.group_by_to_dict(f, val_fn)
         return self.__step(d.items())
+    
+    
+    @overload
+    def groupmap(self) -> icoll[tuple[Any, Any]]: ...
+    @overload
+    def groupmap(self, f:Callable[[Any, Any], S]) -> icoll[S]: ...
+    
+    def groupmap(self, f:Optional[Callable[[Any, Any], S]]=None):
+        def __unpack_group(group):
+            key, vals = group
+            return [(key, v) for v in vals]
+        pairs = self.mapcat(__unpack_group)
+        if f:
+            return pairs.pairmap(f)
+        return pairs
+    
+    
+    def rangify(self) -> icoll[Tuple[T, T]]:
+        __it = iter(self.__coll)
+        try:
+            __init_val = first_(__it)
+        except MissingValueException:
+            raise EmptyCollectionException("Can't `rangify` an empty collection!")
+        __f = Rangifier(__init_val)
+        return self.__step(map(__f, __it))
     
     
     # ==================================================================
