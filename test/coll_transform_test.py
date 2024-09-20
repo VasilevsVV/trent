@@ -1,3 +1,4 @@
+from typing import Iterable
 from trent.coll import icoll
 
 
@@ -56,3 +57,26 @@ def test_add_oper_2():
     c = icoll(range(10))
     c += range(10, 20)
     assert list(c) == list(range(20))
+
+
+def test_to_list():
+    c = icoll(range(10))
+    assert c.to_list() == list(range(10))
+
+
+def test_collect_1():
+    c = icoll(range(10))
+    res = c.collect()
+    assert res == list(range(10))
+
+
+def test_collect_2():
+    c = icoll(range(10))
+    assert c.collect(str) == str(list(range(10)))
+
+
+def test_collect_3():
+    def __foo(lst: list[int]):
+        return list(lst)
+    c = icoll(range(10))
+    assert c.collect(__foo) == str(list(range(10)))
