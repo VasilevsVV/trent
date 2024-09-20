@@ -6,18 +6,15 @@ from funcy import filter, complement
 from itertools import chain
 from pprint import pprint
 from time import sleep
-from typing import Any, Callable, Iterable, Iterator, Optional, TypeVar, overload
+from typing import Any, Callable, Dict, Generic, Hashable, Iterable, Iterator, Optional, Tuple, TypeVar, overload
 
 from trent.concur import DEFAULT_THREAD_COUNT, TRENT_THREADPOOL
-from trent.func import identity
+from trent.func import first, identity, second
 
 T = TypeVar('T')
 T1 = TypeVar('T1')
+T2 = TypeVar('T2')
 S = TypeVar('S')
-
-
-def __make_threadpool(threads: int = DEFAULT_THREAD_COUNT):
-    return conc.ThreadPoolExecutor(threads)
 
 
 class NestedIterationExceprion(Exception):
@@ -25,7 +22,21 @@ class NestedIterationExceprion(Exception):
         return 'Nested iteration over `coll` class is invalid !!!'
 
 
-class coll(Iterable[T]):
+class DistinctFilter(Generic[T]):
+    def __init__(self, f:Callable[[T], Hashable]) -> None:
+        self.__encounters = set()
+        self.__f = f
+    
+    
+    def __call__(self, val: T) -> bool:
+        __val = self.__f(val)
+        if __val in self.__encounters:
+            return False
+        self.__encounters.add(__val)
+        return True
+
+
+class icoll(Iterable[T]):
     def __init__(self, collection: Optional[Iterable[T]] = None) -> None:
         self.__coll: Iterable[T]
         self.__buffer: list[T]
@@ -40,67 +51,155 @@ class coll(Iterable[T]):
     def collection(self) -> Iterable[T]:
         return self.__coll
     
+    # =================================================================
+    #           TODO
+    
+    def _init_collection(self, collection:Optional[Iterable[T]]=None) -> Iterable[T]:
+        if collection is None:
+            return []
+        elif isinstance(collection, icoll):
+            return collection.collection
+        elif isinstance(collection, Iterable):
+            return collection
+        else:
+            raise Exception(f'Invalid collection type: {type(collection)}. Expected Iterable!')
+    
+    
+    # def take(self, n):
+    #     self._collection = fn.take(n, self.lst())
+    #     return self
+    
+    # def takewhile(self, predicate:Callable[[Any], bool]):
+    #     self._collection = fn.takewhile(predicate, self.collect()) # type: ignore
+    
+    
+    
+    
+    # def group_by(self, f:Callable[[Any], Hashable], val_fn: Callable[[Any], Any] = _identity):
+    #     pairs = self.map(_make_group_pair(f, val_fn)).lst()
+    #     res: dict[Hashable, list] = {}
+    #     for p in pairs:
+    #         k,v = p
+    #         if k in res:
+    #             res[k].append(v)
+    #         else:
+    #             res[k] = [v]
+    #     self._collection = list(res.items())
+    #     return self
+    
+    # def groupmap(self, f:Optional[Callable[[Any, Any], Any]]=None):
+    #     pairs = self.mapcat(_unpack_group)
+    #     if f:
+    #         return pairs.pairmap(f)
+    #     return pairs
+    
+    # def grouppmap(self, f:Callable[[Any, Any], Any]):
+    #     pairs = self.mapcat(_unpack_group)
+    #     return pairs.pairpmap(f)
+    
+    # def map_to_pair(self, f_key, f_val=_no_value()):
+    #     f_val = _identity if isinstance(f_val, _no_value) else f_val
+    #     return self.map(_make_pair_fn(f_key, f_val))
+    
+    # def pairmap(self, f:Callable[[Any, Any], Any]):
+    #     return self.map(lambda p: f(first(p), second(p)))
+    
+    # def pairpmap(self, f:Callable[[Any, Any], Any]):
+    #     return self.pmap(lambda p: f(first(p), second(p)))
+    
+    # def cat(self):
+    #     return self.mapcat(_identity)
+    
+    # def rangify(self):
+    #     self.collect()
+    #     self._collection = zip(self._collection, list(self._collection)[1:])
+    #     return self
+    
+    
+    # def apply(self, f:Callable[[Any], Optional[Any]]):
+    #     def __apply(el: Any):
+    #         f(el)
+    #         return el
+    #     return self.map(__apply)
+    
     
     # ==================================================================
     #           MAPS
     
-    def map(self, f: Callable[[T], T1]) -> coll[T1]:
-        return coll(map(f, self.__coll))
+    def map(self, f: Callable[[T], T1]) -> icoll[T1]:
+        return icoll(map(f, self.__coll))
     
     
-    def pmap(self, f: Callable[[T], S]) -> coll[S]:
+    def pmap(self, f: Callable[[T], S]) -> icoll[S]:
         __map = TRENT_THREADPOOL.map(f, self.__coll)
-        return coll(__map)
+        return icoll(__map)
     
     
-    def pmap_(self, f: Callable[[T], S], threads=DEFAULT_THREAD_COUNT) -> coll[S]:
+    def pmap_(self, f: Callable[[T], S], threads=DEFAULT_THREAD_COUNT) -> icoll[S]:
         assert threads >= 1, 'Async Thread count CAN NOT be < 1'
         if threads == 1:
             return self.map(f)
         with conc.ThreadPoolExecutor(threads) as p:
             __map = p.map(f, self.__coll)
-        return coll(__map)
+        return icoll(__map)
     
     
-    def mapcat(self, f: Callable[[T], Iterable[T1]]) -> coll[T1]:
+    def pairmap(self, f:Callable[[Optional[T1], Optional[T2]], S]) -> icoll[S]:
+        return self.map(lambda p: f(first(p), second(p)))
+    
+    
+    def mapcat(self, f: Callable[[T], Iterable[T1]]) -> icoll[T1]:
         m = map(f, self.__coll)
         m = reduce(chain, m)
-        return coll(m)
+        return icoll(m)
     
     
-    def filter(self, f: Callable[[T], Any]) -> coll[T]:
-        return coll(filter(f, self.__coll))
+    def catmap(self, f: Callable[[Any], T1]) -> icoll[T1]:
+        return self.mapcat(identity).map(f)
     
     
-    def remove(self, f: Callable[[T], Any]) -> coll[T]:
+    def filter(self, f: Callable[[T], Any]) -> icoll[T]:
+        return icoll(filter(f, self.__coll))
+    
+    
+    def remove(self, f: Callable[[T], Any]) -> icoll[T]:
         _f = complement(f)
         return self.filter(_f)
+    
+    
+    def unique(self) -> icoll[T]:
+        return self.distinct_by(identity)
+    
+    
+    def distinct_by(self, f:Callable[[Any], Hashable]=identity) -> icoll[T]:
+        __pred = DistinctFilter(f)
+        return self.filter(__pred)
     
     
     # ==================================================================
     #           TRANSFORMATIONS
     
-    def concat(self, *__iterables: Iterable[T]) -> coll[T]:
-        res = coll(self.__coll)
+    def concat(self, *__iterables: Iterable[T]) -> icoll[T]:
+        res = icoll(self.__coll)
         for __it in __iterables:
             res.extend_(__it)
         return res
     
-    def extend(self, __iterable: Iterable[T]) -> coll[T]:
+    def extend(self, __iterable: Iterable[T]) -> icoll[T]:
         return self.concat(__iterable)
     
     
-    def append(self, __val: T) -> coll[T]:
-        return coll(self.__coll).append_(__val)
+    def append(self, __val: T) -> icoll[T]:
+        return icoll(self.__coll).append_(__val)
 
     
-    def __add__(self, __iter: Iterable[T]) -> coll[T]:
+    def __add__(self, __iter: Iterable[T]) -> icoll[T]:
         return self.concat(__iter)
     
     # ===============================================================
     #   IN_PLACE TRANSFORMATIONS
     
-    def extend_(self, __iterable: Iterable[T]) -> coll[T]:
+    def extend_(self, __iterable: Iterable[T]) -> icoll[T]:
         """In-place extend. Addes `__iterable` to the end of `coll`.
 
         Args:
@@ -109,13 +208,13 @@ class coll(Iterable[T]):
         Returns:
             coll[T]: Self
         """        
-        if isinstance(__iterable, coll):
+        if isinstance(__iterable, icoll):
             self.__coll = chain(self.__coll, __iterable.collection)
             return self
         self.__coll = chain(self.__coll, __iterable)
         return self
     
-    def append_(self, __val: T) -> coll[T]:
+    def append_(self, __val: T) -> icoll[T]:
         self.extend_([__val])
         return self
     
@@ -169,32 +268,30 @@ class coll(Iterable[T]):
         return f'coll({lst})'
 
 
-
-class pcoll(coll, Iterable[T]):
-    def __init__(self, collection: Optional[Iterable[T]] = None) -> None:
-        self.__buffer: list[T]
+class paired_coll(icoll, Iterable[Tuple[T1, T2]]):
+    def __init__(self, collection: Iterable[Tuple[T1, T2]] | Dict[T1, T2] | None = None) -> None:
         super().__init__(collection)
     
     
-    def __iter__(self):
-        if self.__is_iterated:
-            raise NestedIterationExceprion
-        self.__buffer = []
-        self.__iter = iter(self.__coll)
-        self.__is_iterated = True
-        return self
-    
-    
-    def __next__(self) -> T:
-        try:
-            val = next(self.__iter)
-        except StopIteration:
-            self.__coll = self.__buffer
-            self.__is_iterated = False
-            raise StopIteration
-        self.__buffer.append(val)
-        return val
+    def _init_collection(self, collection:Iterable[Tuple[T1, T2]]|Dict[T1, T2]|None = None) -> Iterable[Tuple[T1, T2]]:
+        if collection is None:
+            return []
+        elif isinstance(collection, paired_coll):
+            return collection.__coll
+        elif isinstance(collection, Dict):
+            return collection.items() # type: ignore
+        elif isinstance(collection, Iterable):
+            return collection
+        else:
+            raise Exception(f'Invalid collection type: {type(collection)}. Expected Iterable!')
+
+
+
+
 
 
 if __name__ == '__main__':
+    # c = paired_coll({1: 10}.items())
+    # print(c)
+    print(dict([(1,10), (2, 20)]))
     pass
