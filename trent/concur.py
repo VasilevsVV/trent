@@ -20,5 +20,5 @@ def cpu_count():
     return 8
 
 
-DEFAULT_THREAD_COUNT = cpu_count()
-TRENT_THREADPOOL = conc.ThreadPoolExecutor(DEFAULT_THREAD_COUNT * 2, 'trent')
+CPU_COUNT = cpu_count()
+TRENT_THREADPOOL = conc.ThreadPoolExecutor(CPU_COUNT * 2, 'trent')

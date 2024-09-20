@@ -21,7 +21,7 @@ from typing import (
 
 from funcy import complement, filter, take
 
-from trent.concur import DEFAULT_THREAD_COUNT, TRENT_THREADPOOL
+from trent.concur import CPU_COUNT, TRENT_THREADPOOL
 from trent.func import MissingValueException, first, first_, identity, second, second_
 
 T = TypeVar('T')
@@ -128,7 +128,7 @@ class icoll(Iterable[T]):
         return self.__step(__map)
     
     
-    def pmap_(self, f: Callable[[T], S], threads=DEFAULT_THREAD_COUNT) -> icoll[S]:
+    def pmap_(self, f: Callable[[T], S], threads=CPU_COUNT) -> icoll[S]:
         assert threads >= 1, 'Async Thread count CAN NOT be < 1'
         if threads == 1:
             return self.map(f)

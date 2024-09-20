@@ -1,7 +1,7 @@
 from typing import Any, Callable, Iterable, Optional, Tuple, TypeVar, overload
 
 from trent.coll import icoll
-from trent.concur import DEFAULT_THREAD_COUNT
+from trent.concur import CPU_COUNT
 
 
 T = TypeVar('T')
@@ -32,7 +32,7 @@ def pmap(seq: Optional[Iterable[T]], f: Callable[[T], T2]) -> icoll[T2]:
     return icoll(seq).pmap(f)
 
 
-def pmap_(seq: Optional[Iterable[T]], f: Callable[[T], T2], threads: int = DEFAULT_THREAD_COUNT) -> icoll[T2]:
+def pmap_(seq: Optional[Iterable[T]], f: Callable[[T], T2], threads: int = CPU_COUNT) -> icoll[T2]:
     return icoll(seq).pmap(f)
 
 
