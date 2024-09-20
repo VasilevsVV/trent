@@ -76,7 +76,7 @@ def test_collect_2():
 
 
 def test_collect_3():
-    def __foo(lst: Iterable[int]):
+    def __foo(lst: list[int]):
         return lst[0:3]
     c = icoll(range(10))
     assert c.collect(__foo) == [0, 1, 2]
