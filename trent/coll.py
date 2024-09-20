@@ -1,13 +1,25 @@
 from __future__ import annotations
 
 import concurrent.futures as conc
-from functools import reduce, cache
-from funcy import filter, complement, take
-from itertools import chain
+from functools import cache, reduce
+from itertools import chain, takewhile
 from pprint import pprint
 from time import sleep
-from typing import Any, Callable, Dict, Generic, Hashable, Iterable, Iterator, Optional, Tuple, TypeVar, overload
-from itertools import takewhile
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Generic,
+    Hashable,
+    Iterable,
+    Iterator,
+    Optional,
+    Tuple,
+    TypeVar,
+    overload,
+)
+
+from funcy import complement, filter, take
 
 from trent.concur import DEFAULT_THREAD_COUNT, TRENT_THREADPOOL
 from trent.func import MissingValueException, first, first_, identity, second, second_

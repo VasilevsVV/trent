@@ -16,6 +16,10 @@ maintainers = [
 
 readme = "README.md"
 requires-python = ">=3.10.12"
+keywords = [
+    "Sequence", "Collection", "mapping", "stream",
+    "functional", "iteration", "concurrency", "group", "by"]
+license = {text = "Apache Software License"}
 
 
 dependencies = [
