@@ -6,7 +6,7 @@ class MissingValueException(Exception):
         self._value = val
         self._fn_name = fn_name
     
-    def __repr__(self) -> str:
+    def __str__(self) -> str:
         return f'Missing {self._fn_name} for value: {self._value}'
 
 
@@ -75,9 +75,20 @@ def second_(coll: Iterable[_T]) -> _T:
     return res
 
 
+def nth_(coll: Iterable[_T], n:int) -> Optional[_T]:
+    res = _nth(coll, n, f'nth_{n}', __no_value())
+    if isinstance(res, __no_value):
+        raise MissingValueException(coll, f'nth_{n}')
+    return res
+
+
 # ============================================================================
 #               UTIL
 
 
 def isnone(val: Any) -> bool:
     return val is None
+
+
+if __name__ == '__main__':
+    print(nth(iter([]), 2))
