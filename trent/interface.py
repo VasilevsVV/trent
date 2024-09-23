@@ -60,7 +60,6 @@ def groupmap(f:Callable[[T1, T2], T], seq:Iterable[Tuple[T1, Iterable[T2]]]) -> 
     return icoll(seq).groupmap(f)
 
 
-
 @overload
 def map_to_pair(seq: Iterable[T], f_key:Callable[[T], T1]) -> icoll[Tuple[T1, T]]: ...
 @overload
@@ -70,6 +69,11 @@ def map_to_pair(seq: Iterable[T], f_key:Callable[[T], T1], f_val: Optional[Calla
     if f_val is not None:
         return icoll(seq).map_to_pair(f_key, f_val)
     return icoll(seq).map_to_pair(f_key)
+
+
+
+def rangify(seq: Iterable[T]) -> icoll[Tuple[T, T]]:
+    return icoll(seq).rangify()
 
 
 if __name__ == '__main__':
