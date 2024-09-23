@@ -9,7 +9,6 @@ from typing import (
     Any,
     Callable,
     Dict,
-    Generic,
     Hashable,
     Iterable,
     Iterator,
@@ -21,6 +20,7 @@ from typing import (
 
 from funcy import complement, filter, take
 
+from trent.aux import DistinctFilter, Rangifier
 from trent.concur import CPU_COUNT, TRENT_THREADPOOL
 from trent.func import MissingValueException, first, first_, identity, second, second_
 
@@ -46,30 +46,6 @@ class EmptyCollectionException(Exception):
     
     def __repr__(self) -> str:
         return f'Collection is empty! {self.__msg}'
-
-
-class DistinctFilter(Generic[T]):
-    def __init__(self, f:Callable[[T], Hashable]) -> None:
-        self.__encounters = set()
-        self.__f = f
-    
-    
-    def __call__(self, val: T) -> bool:
-        __val = self.__f(val)
-        if __val in self.__encounters:
-            return False
-        self.__encounters.add(__val)
-        return True
-
-
-class Rangifier(Generic[T]):
-    def __init__(self, init_val: T) -> None:
-        self.__prev: T = init_val
-    
-    def __call__(self, val: T) -> Tuple[T, T]:
-        res = (self.__prev, val)
-        self.__prev = val
-        return res
 
 
 class icoll(Iterable[T]):
@@ -103,18 +79,6 @@ class icoll(Iterable[T]):
     
     def __step(self, __coll: Iterable[S]) -> icoll[S]:
         return icoll(__coll)
-    
-
-    # def grouppmap(self, f:Callable[[Any, Any], Any]):
-    #     pairs = self.mapcat(_unpack_group)
-    #     return pairs.pairpmap(f)
-    
-    
-    # def pairpmap(self, f:Callable[[Any, Any], Any]):
-    #     return self.pmap(lambda p: f(first(p), second(p)))
-    
-    # def cat(self):
-    #     return self.mapcat(_identity)
 
     # ==================================================================
     #           MAPS
