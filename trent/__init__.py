@@ -1,6 +1,19 @@
 from .coll import icoll
-from .interface import coll, cmap, cfilter, pmap, pmap_, cat, mapcat, catmap, pairmap, groupcoll, groupmap, map_to_pair
-
+from .interface import (
+    cat,
+    catmap,
+    cfilter,
+    cmap,
+    coll,
+    groupcoll,
+    groupmap,
+    map_to_pair,
+    mapcat,
+    pairmap,
+    pmap,
+    pmap_,
+    rangify
+)
 
 __all__ = [
     'coll',
@@ -14,5 +27,6 @@ __all__ = [
     'pairmap',
     'groupmap',
     'groupcoll',
-    'map_to_pair'
+    'map_to_pair',
+    'rangify'
 ]
