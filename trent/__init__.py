@@ -1,4 +1,5 @@
 from .coll import icoll
+from .func import first, first_, second, second_
 from .interface import (
     cat,
     catmap,
@@ -12,7 +13,7 @@ from .interface import (
     pairmap,
     pmap,
     pmap_,
-    rangify
+    rangify,
 )
 
 __all__ = [
@@ -28,5 +29,10 @@ __all__ = [
     'groupmap',
     'groupcoll',
     'map_to_pair',
-    'rangify'
+    'rangify',
+    
+    'first',
+    'first_',
+    'second',
+    'second_'
 ]

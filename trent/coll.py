@@ -36,7 +36,7 @@ class __no_value():
 
 
 class NestedIterationExceprion(Exception):
-    def __repr__(self) -> str:
+    def __str__(self) -> str:
         return 'Nested iteration over `coll` class is invalid !!!'
 
 
@@ -44,7 +44,7 @@ class EmptyCollectionException(Exception):
     def __init__(self, msg: str) -> None:
         self.__msg = msg
     
-    def __repr__(self) -> str:
+    def __str__(self) -> str:
         return f'Collection is empty! {self.__msg}'
 
 
