@@ -22,7 +22,7 @@ from funcy import complement, filter, take
 
 from trent.aux import DistinctFilter, Rangifier
 from trent.concur import CPU_COUNT, TRENT_THREADPOOL
-from trent.func import MissingValueException, first, first_, identity, second, second_
+from trent.func import MissingValueException, first, first_, identity, isnone, second, second_
 
 T = TypeVar('T')
 T1 = TypeVar('T1')
@@ -129,6 +129,16 @@ class icoll(Iterable[T]):
     def remove(self, f: Callable[[T], Any]) -> icoll[T]:
         _f = complement(f)
         return self.filter(_f)
+    
+    
+    def remove_none(self) -> icoll[Any]:
+        """WARNING: removes typehinting for given `coll`. Returns icoll[Any].
+        Use only for avoiding typehint warnings about None type!
+
+        Returns:
+            icoll[Any]: icoll[T] with all None removed
+        """        
+        return self.remove(isnone)
     
     
     def unique(self) -> icoll[T]:
