@@ -75,3 +75,9 @@ def second_(coll: Iterable[_T]) -> _T:
     return res
 
 
+# ============================================================================
+#               UTIL
+
+
+def isnone(val: Any) -> bool:
+    return val is None

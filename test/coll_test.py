@@ -66,6 +66,12 @@ def test_remove():
     assert res == [0, 2, 4, 6, 8]
 
 
+def test_remove_none():
+    c = icoll([1,2,3,4,None,6,None,8])
+    res = list(c.remove_none())
+    assert res == [1,2,3,4,6,8]
+
+
 def test_mapcat():
     c = icoll([2, 3, 4])
     res = c.mapcat(_rng)
