@@ -275,6 +275,9 @@ class icoll(Iterable[T]):
     def to_list(self) -> list[T]:
         return list(self._coll)
     
+    def to_set(self) -> set[T]:
+        return set(self._coll)
+    
     
     def collect(self, f: Callable[[list[T]], S] = identity) -> S:
         return f(self.to_list())
