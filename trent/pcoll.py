@@ -10,20 +10,20 @@ class pcoll(icoll, Iterable[T]):
     
     
     def __iter__(self):
-        if self.__is_iterated:
+        if self._is_iterated:
             raise NestedIterationExceprion
         self.__buffer = []
-        self.__iter = iter(self.__coll)
-        self.__is_iterated = True
+        self._iterator = iter(self._coll)
+        self._is_iterated = True
         return self
     
     
     def __next__(self) -> T:
         try:
-            val = next(self.__iter)
+            val = next(self._iterator)
         except StopIteration:
-            self.__coll = self.__buffer
-            self.__is_iterated = False
+            self._coll = self.__buffer
+            self._is_iterated = False
             raise StopIteration
         self.__buffer.append(val)
         return val
