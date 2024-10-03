@@ -1,4 +1,4 @@
-from trent.coll import icoll
+from trent.coll import icoll, persistent_coll
 
 def _rng(n: int):
     return range(n)
@@ -117,3 +117,12 @@ def test_cat():
     c = icoll([[1, 2, 3], [4, 5]])
     res = c.cat()
     assert list(res) == [1, 2, 3, 4, 5]
+
+
+
+def test_persistent_coll():
+    c = persistent_coll([1,2,3])
+    res = c.map(lambda x: x*x).map(lambda x: x*x)
+    
+    assert list(res) == [1, 16, 81]
+    assert list(res) == [1, 16, 81]
