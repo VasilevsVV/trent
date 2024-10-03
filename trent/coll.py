@@ -50,18 +50,17 @@ class EmptyCollectionException(Exception):
 
 class icoll(Iterable[T]):
     def __init__(self, collection: Optional[Iterable[T]] = None) -> None:
-        self.__coll: Iterable[T]
-        self.__buffer: list[T]
-        self.__iter: Iterator[T]
-        self.__is_iterated: bool = False
+        self._coll: Iterable[T]
+        self._iterator: Iterator[T]
+        self._is_iterated: bool = False
         if collection is not None:
-            self.__coll = collection
+            self._coll = collection
         else:
-            self.__coll = []
+            self._coll = []
     
     @property
     def collection(self) -> Iterable[T]:
-        return self.__coll
+        return self._coll
     
     # =================================================================
     #           TODO
@@ -77,19 +76,19 @@ class icoll(Iterable[T]):
             raise Exception(f'Invalid collection type: {type(collection)}. Expected Iterable!')
     
     
-    def __step(self, __coll: Iterable[S]) -> icoll[S]:
+    def _step(self, __coll: Iterable[S]) -> icoll[S]:
         return icoll(__coll)
 
     # ==================================================================
     #           MAPS
     
     def map(self, f: Callable[[T], S]) -> icoll[S]:
-        return self.__step(map(f, self.__coll))
+        return self._step(map(f, self._coll))
     
     
     def pmap(self, f: Callable[[T], S]) -> icoll[S]:
-        __map = TRENT_THREADPOOL.map(f, self.__coll)
-        return self.__step(__map)
+        __map = TRENT_THREADPOOL.map(f, self._coll)
+        return self._step(__map)
     
     
     def pmap_(self, f: Callable[[T], S], threads=CPU_COUNT) -> icoll[S]:
@@ -97,14 +96,14 @@ class icoll(Iterable[T]):
         if threads == 1:
             return self.map(f)
         with conc.ThreadPoolExecutor(threads) as p:
-            __map = p.map(f, self.__coll)
-        return self.__step(__map)
+            __map = p.map(f, self._coll)
+        return self._step(__map)
     
     
     def mapcat(self, f: Callable[[T], Iterable[T1]]) -> icoll[T1]:
-        m = map(f, self.__coll)
+        m = map(f, self._coll)
         m = reduce(chain, m)
-        return self.__step(m)
+        return self._step(m)
     
     
     def cat(self) -> icoll[Any]:
@@ -123,7 +122,7 @@ class icoll(Iterable[T]):
     
     
     def filter(self, f: Callable[[T], Any]) -> icoll[T]:
-        return self.__step(filter(f, self.__coll))
+        return self._step(filter(f, self._coll))
     
     
     def remove(self, f: Callable[[T], Any]) -> icoll[T]:
@@ -152,10 +151,10 @@ class icoll(Iterable[T]):
     
     def take(self, n: int)-> icoll[T]:
         assert n >= 0, 'You can only `take` >= 0 elements!'
-        return self.__step(take(n, self.__coll))
+        return self._step(take(n, self._coll))
     
     def takewhile(self, predicate:Callable[[T], bool]) -> icoll[T]:
-        return self.__step(takewhile(predicate, self.__coll))
+        return self._step(takewhile(predicate, self._coll))
     
     
     # ==================================================================
@@ -187,7 +186,7 @@ class icoll(Iterable[T]):
     
     def group_by(self, f:Callable[[T], T1], val_fn: Callable[[T], T2] = identity) -> icoll[tuple[T1, list[T2]]]:
         d = self.group_by_to_dict(f, val_fn)
-        return self.__step(d.items())
+        return self._step(d.items())
     
     
     @overload
@@ -206,20 +205,20 @@ class icoll(Iterable[T]):
     
     
     def rangify(self) -> icoll[Tuple[T, T]]:
-        __it = iter(self.__coll)
+        __it = iter(self._coll)
         try:
             __init_val = first_(__it)
         except MissingValueException:
             raise EmptyCollectionException("Can't `rangify` an empty collection!")
         __f = Rangifier(__init_val)
-        return self.__step(map(__f, __it))
+        return self._step(map(__f, __it))
     
     
     # ==================================================================
     #           TRANSFORMATIONS
     
     def concat(self, *__iterables: Iterable[T]) -> icoll[T]:
-        res = self.__step(self.__coll)
+        res = self._step(self._coll)
         for __it in __iterables:
             res.extend_(__it)
         return res
@@ -233,11 +232,11 @@ class icoll(Iterable[T]):
     
     
     def append(self, __val: T) -> icoll[T]:
-        return self.__step(self.__coll).append_(__val)
+        return self._step(self._coll).append_(__val)
     
     
     def cons(self, __val: T):
-        return self.__step(chain([__val], self.__coll))
+        return self._step(chain([__val], self._coll))
 
     
     def __add__(self, __iter: Iterable[T]) -> icoll[T]:
@@ -256,9 +255,9 @@ class icoll(Iterable[T]):
             coll[T]: Self
         """        
         if isinstance(__iterable, icoll):
-            self.__coll = chain(self.__coll, __iterable.collection)
+            self._coll = chain(self._coll, __iterable.collection)
             return self
-        self.__coll = chain(self.__coll, __iterable)
+        self._coll = chain(self._coll, __iterable)
         return self
     
     def append_(self, __val: T) -> icoll[T]:
@@ -267,14 +266,14 @@ class icoll(Iterable[T]):
     
     
     def cons_(self, __val: T):
-        self.__coll = chain([__val], self.__coll)
+        self._coll = chain([__val], self._coll)
     
     
     # =================================================================
     #           COLLECTING
     
     def to_list(self) -> list[T]:
-        return list(self.__coll)
+        return list(self._coll)
     
     
     def collect(self, f: Callable[[list[T]], S] = identity) -> S:
@@ -297,25 +296,31 @@ class icoll(Iterable[T]):
     # ================================================================
     #           ITERATION
     
-    def __iter__(self):
-        if self.__is_iterated:
+    def _iter(self):
+        if self._is_iterated:
             raise NestedIterationExceprion
-        self.__iter = iter(self.__coll)
-        self.__is_iterated = True
+        self._iterator = iter(self._coll)
+        self._is_iterated = True
         return self
     
+    def __iter__(self):
+        return self._iter()
+    
+    
+    def _next(self):
+        try:
+            return next(self._iterator)
+        except StopIteration:
+            self._is_iterated = False
+            raise StopIteration
     
     def __next__(self) -> T:
-        try:
-            return next(self.__iter)
-        except StopIteration:
-            self.__is_iterated = False
-            raise StopIteration
+        return self._next()
     
     def __repr__(self) -> str:
         # Persisting collection values. For easier debugging.
-        self.__coll = list(self.__coll)
-        return f'coll({self.__coll})'
+        self._coll = list(self._coll)
+        return f'coll({self._coll})'
     
     
     # ===============================================================
@@ -325,16 +330,51 @@ class icoll(Iterable[T]):
         return lambda val: (f(val), val_fn(val))
 
 
+class persistent_coll(icoll, Iterable[T]):
+    def __init__(self, collection: Iterable | None = None) -> None:
+        self.__buffer: list[T] = []
+        self.__is_iterated: bool = False
+        super().__init__(collection)
+    
+    
+    def _step(self, __coll: Iterable[S]) -> icoll[S]:
+        return persistent_coll(__coll)
+    
+    
+    def _iter(self):
+        if self.__is_iterated:
+            raise NestedIterationExceprion
+        self._iterator = iter(self._coll)
+        self.__buffer = []
+        self.__is_iterated = True
+        return self
+    
+    def _next(self):
+        try:
+            res = next(self._iterator)
+        except StopIteration:
+            self._coll = self.__buffer
+            self.__is_iterated = False
+            raise StopIteration
+        self.__buffer.append(res)
+        return res
+        
+        
+
+
 class paired_coll(icoll, Iterable[Tuple[T1, T2]]):
     def __init__(self, collection: Iterable[Tuple[T1, T2]] | Dict[T1, T2] | None = None) -> None:
         super().__init__(collection)
+        
+        
+    
     
     
     def _init_collection(self, collection:Iterable[Tuple[T1, T2]]|Dict[T1, T2]|None = None) -> Iterable[Tuple[T1, T2]]:
         if collection is None:
             return []
         elif isinstance(collection, paired_coll):
-            return collection.__coll
+            return collection._coll
         elif isinstance(collection, Dict):
             return collection.items() # type: ignore
         elif isinstance(collection, Iterable):
