@@ -102,7 +102,7 @@ class icoll(Iterable[T]):
     
     def mapcat(self, f: Callable[[T], Iterable[T1]]) -> icoll[T1]:
         m = map(f, self._coll)
-        m = reduce(chain, m)
+        m = reduce(chain, m, iter([]))
         return self._step(m)
     
     

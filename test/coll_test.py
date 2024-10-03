@@ -78,6 +78,12 @@ def test_mapcat():
     assert list(res) == [0,1, 0,1,2, 0,1,2,3]
 
 
+def test_mapcat_2():
+    c = icoll([])
+    res = c.mapcat(_rng)
+    assert list(res) == []
+
+
 def test_catmap():
     c = icoll([[1, 2], [3, 4, 5]])
     res = c.catmap(_double)
