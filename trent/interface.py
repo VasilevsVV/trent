@@ -1,4 +1,4 @@
-from typing import Any, Callable, Iterable, Optional, Tuple, TypeVar, overload
+from typing import Any, Callable, Dict, Iterable, Optional, Tuple, TypeVar, overload
 
 from trent.coll import icoll
 from trent.concur import CPU_COUNT
@@ -12,11 +12,15 @@ T2 = TypeVar('T2')
 @overload
 def coll() -> icoll[Any]:...
 @overload
+def coll(seq: Dict[T1, T2]) -> icoll[Tuple[T1, T2]]: ...
+@overload
 def coll(seq: Iterable[Tuple[T1, T2]]) -> icoll[Tuple[T1, T2]]: ...
 @overload
 def coll(seq: Iterable[T]) -> icoll[T]: ...
 
-def coll(seq: Optional[Iterable[T]] = None) -> icoll[T]:
+def coll(seq: Optional[Iterable] = None) -> icoll:
+    if isinstance(seq, Dict):
+        return icoll(seq.values())
     return icoll(seq)
 
 
@@ -33,7 +37,7 @@ def pmap(f: Callable[[T], T2], seq: Optional[Iterable[T]]) -> icoll[T2]:
 
 
 def pmap_(f: Callable[[T], T2], seq: Optional[Iterable[T]], threads: int = CPU_COUNT) -> icoll[T2]:
-    return icoll(seq).pmap(f)
+    return icoll(seq).pmap_(f, threads)
 
 
 def cat(seq: Optional[Iterable[Iterable[T]]]) -> icoll[T]:
