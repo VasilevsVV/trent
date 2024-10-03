@@ -20,7 +20,7 @@ def coll(seq: Iterable[T]) -> icoll[T]: ...
 
 def coll(seq: Optional[Iterable] = None) -> icoll:
     if isinstance(seq, Dict):
-        return icoll(seq.values())
+        return icoll(seq.items())
     return icoll(seq)
 
 
