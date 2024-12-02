@@ -22,7 +22,8 @@ from funcy import complement, filter, take
 
 from trent.aux import DistinctFilter, Rangifier
 from trent.concur import CPU_COUNT, TRENT_THREADPOOL
-from trent.func import MissingValueException, first, first_, identity, isnone, second, second_
+from trent.func import identity, isnone
+from trent.nth import MissingValueException, first, first_, second, second_
 
 T = TypeVar('T')
 T1 = TypeVar('T1')

@@ -1,10 +1,12 @@
 from .coll import icoll
-from .func import first, first_, second, second_
+from .nth import first, first_, second, second_
+from .func import gtr, gtr_
 from .interface import (
     cat,
     catmap,
     cfilter,
     cmap,
+    seq,
     coll,
     groupcoll,
     groupmap,
@@ -17,6 +19,9 @@ from .interface import (
 )
 
 __all__ = [
+    'icoll',
+    
+    'seq',
     'coll',
     'cmap', 
     'cfilter',
@@ -34,5 +39,8 @@ __all__ = [
     'first',
     'first_',
     'second',
-    'second_'
+    'second_',
+    
+    'gtr',
+    'gtr_'
 ]

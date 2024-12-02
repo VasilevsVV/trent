@@ -1,89 +1,44 @@
-from typing import Any, Iterable, Optional, Sequence, TypeVar
+from typing import Any, Callable, Dict, Hashable, Iterable, Optional, Sequence, TypeVar
+
+from trent.nth import __no_value, nth
 
 
-class MissingValueException(Exception):
-    def __init__(self, val, fn_name: str) -> None:
-        self._value = val
-        self._fn_name = fn_name
-    
-    def __str__(self) -> str:
-        return f'Missing {self._fn_name} for value: {self._value}'
 
-
-class __no_value():
-    def __init__(self) -> None:
-        pass
 
 # ======================================================
 
 _T = TypeVar('_T')
 _T2 = TypeVar('_T2')
 
+NV = __no_value()
 
 def identity(val: _T) -> _T:
     return val
 
-# =======================================================
-
-
-def _nth(coll:Optional[Iterable[_T]], n:int, position_name, default:_T2 = None) -> _T|_T2:
-    if (isinstance(coll, Sequence)):
-        if len(coll) > n:
-            return coll[n]
-        return default
-    if isinstance(coll, Iterable):
-        it = iter(coll)
-        i = 0
-        while i < n:
-            try:
-                next(it)
-            except StopIteration:
-                return default
-            i += 1
-        try:
-            return next(it)
-        except StopIteration:
-            return default
-    if coll is None:
-        return default
-    raise Exception("Cant get '{}' attribute from value: {}.\n It is not a Collection|None".format(position_name, coll))
-
-def first(coll: Iterable[_T]|Any) -> Optional[_T]:
-    return _nth(coll, 0, 'first')
-
-def second(coll: Iterable[_T]|Any) -> Optional[_T]:
-    return _nth(coll, 1, 'second')
-
-def third(coll: Iterable[_T]|Any) -> Optional[_T]:
-    return _nth(coll, 2, 'third')
-
-def nth(coll: Iterable[_T]|Any, n:int) -> Optional[_T]:
-    return _nth(coll, n, 'nth')
-
-
-def first_(coll: Iterable[_T]) -> _T:
-    res = _nth(coll, 0, 'first_', __no_value())
-    if isinstance(res, __no_value):
-        raise MissingValueException(coll, 'first')
-    return res
-
-
-def second_(coll: Iterable[_T]) -> _T:
-    res = _nth(coll, 1, 'second_', __no_value())
-    if isinstance(res, __no_value):
-        raise MissingValueException(coll, 'second')
-    return res
-
-
-def nth_(coll: Iterable[_T], n:int) -> Optional[_T]:
-    res = _nth(coll, n, f'nth_{n}', __no_value())
-    if isinstance(res, __no_value):
-        raise MissingValueException(coll, f'nth_{n}')
-    return res
-
 
 # ============================================================================
 #               UTIL
+
+def __get(m: Dict[Any, _T], key, default: _T2 = None) -> _T|_T2:
+    return m.get(key, default)
+    
+
+def getter(key, default: _T2 = None) -> Callable[[Dict[Any, _T]], _T|_T2]:
+    def __f(__m: Dict[Any, _T]) -> _T | _T2:
+        return __get(__m, key, default)
+    return __f
+
+
+def gtr(key, default: _T2 = None, /) -> Callable[[Dict[Any, _T]], _T|_T2]:
+    return getter(key, default)
+
+def gtr_(key:Hashable, _type: type[_T], /) -> Callable[[Dict[Any, Any]], _T]:
+    def __f(__m: Dict[Any, _T]):
+        _res = __get(__m, key, NV)
+        if isinstance(_res, __no_value):
+            raise Exception(f'Missing value by key: {key}, from map: {__m}')
+        return _res
+    return __f
 
 
 def isnone(val: Any) -> bool:
@@ -91,4 +46,8 @@ def isnone(val: Any) -> bool:
 
 
 if __name__ == '__main__':
-    print(nth(iter([]), 2))
+    d = {'foo': 1}
+    
+    f = gtr_('foo', int)
+    
+    res = f(d)
