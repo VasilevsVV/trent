@@ -1,4 +1,4 @@
-from trent.coll import icoll
+from trent.coll import icoll, persistent_coll
 
 def _rng(n: int):
     return range(n)
@@ -66,10 +66,22 @@ def test_remove():
     assert res == [0, 2, 4, 6, 8]
 
 
+def test_remove_none():
+    c = icoll([1,2,3,4,None,6,None,8])
+    res = list(c.remove_none())
+    assert res == [1,2,3,4,6,8]
+
+
 def test_mapcat():
     c = icoll([2, 3, 4])
     res = c.mapcat(_rng)
     assert list(res) == [0,1, 0,1,2, 0,1,2,3]
+
+
+def test_mapcat_2():
+    c = icoll([])
+    res = c.mapcat(_rng)
+    assert list(res) == []
 
 
 def test_catmap():
@@ -111,3 +123,12 @@ def test_cat():
     c = icoll([[1, 2, 3], [4, 5]])
     res = c.cat()
     assert list(res) == [1, 2, 3, 4, 5]
+
+
+
+def test_persistent_coll():
+    c = persistent_coll([1,2,3])
+    res = c.map(lambda x: x*x).map(lambda x: x*x)
+    
+    assert list(res) == [1, 16, 81]
+    assert list(res) == [1, 16, 81]
