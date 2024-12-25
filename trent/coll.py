@@ -92,7 +92,7 @@ class icoll(Iterable[T]):
         return self._step(__map)
     
     
-    def pmap_(self, f: Callable[[T], S], threads=CPU_COUNT) -> icoll[S]:
+    def pmap_(self, f: Callable[[T], S], threads: int = CPU_COUNT) -> icoll[S]:
         assert threads >= 1, 'Async Thread count CAN NOT be < 1'
         if threads == 1:
             return self.map(f)
@@ -149,6 +149,8 @@ class icoll(Iterable[T]):
         __pred = DistinctFilter(f)
         return self.filter(__pred)
     
+    # =================================================================
+    #           TAKE
     
     def take(self, n: int)-> icoll[T]:
         assert n >= 0, 'You can only `take` >= 0 elements!'
@@ -323,7 +325,7 @@ class icoll(Iterable[T]):
     
     def __repr__(self) -> str:
         # Persisting collection values. For easier debugging.
-        self._coll = list(self._coll)
+        # self._coll = list(self._coll)
         return f'coll({self._coll})'
     
     
