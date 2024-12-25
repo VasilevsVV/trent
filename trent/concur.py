@@ -5,10 +5,12 @@ import psutil
 import multiprocessing
 
 
-def cpu_count():
+def cpu_count() -> int:
     try:
         import psutil
-        return psutil.cpu_count()
+        res = psutil.cpu_count()
+        assert res
+        return res
     except (ImportError, NotImplementedError):
         pass
 
