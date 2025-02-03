@@ -131,7 +131,12 @@ class icoll(Iterable[T]):
         return self.filter(_f)
     
     
-    def remove_none(self) -> icoll[Any]:
+    @overload
+    def remove_none(self) -> icoll[Any]: ...
+    @overload
+    def remove_none(self, * _types: type[S]) -> icoll[S]: ...
+    
+    def remove_none(self, * _types): # type: ignore
         """WARNING: removes typehinting for given `coll`. Returns icoll[Any].
         Use only for avoiding typehint warnings about None type!
 
