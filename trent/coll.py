@@ -20,7 +20,7 @@ from typing import (
 
 from funcy import complement, filter, take
 
-from trent.aux import DistinctFilter, Rangifier
+from trent.coll_aux import DistinctFilter, Rangifier
 from trent.concur import CPU_COUNT, TRENT_THREADPOOL
 from trent.func import identity, isnone
 from trent.nth import MissingValueException, first, first_, second, second_
