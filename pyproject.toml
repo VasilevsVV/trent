@@ -33,9 +33,23 @@ Homepage = "https://github.com/VasilevsVV/trent"
 Issues = "https://github.com/VasilevsVV/trent/issues"
 
 
+[tool.pyright]
+
+typeCheckingMode = "standard"
+
+
+# =================================================================
+#           TESTING
 
 [tool.pytest.ini_options]
 minversion = "8.0"
+
+pythonpath = [
+    "trent"
+]
+testpaths = [
+    "test"
+]
 python_files = [
     'test_*.py', 
     '*_test.py'
@@ -44,12 +58,3 @@ python_functions = [
     'test_*',
     '*_test'
     ]
-testpaths = [
-    "test"
-]
-
-
-
-[tool.pyright]
-
-typeCheckingMode = "standard"
