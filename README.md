@@ -25,4 +25,4 @@ And more:
 #### What is it NOT for
 **trent** - is keps simple for a reason. Don't try to use it for more than it designed for.
 - Not for high load / high performance Sequences processing (although - it supports parallel-map)
-- Not for processing table-like data. Just use pandas/polars/pyspark for that. It is more suitable for processing each element individually
+- Not for processing table-like data. Just use pandas/polars/pyspark for that. `trent` is more suitable for processing each element individually
