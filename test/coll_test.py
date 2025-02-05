@@ -79,7 +79,16 @@ def test_remove_none_2():
     res = c.remove_none(int, str)
     res = res.map(__f)
     assert res.to_list() == [1,2,3,4,6,8, 10, 12]
-    
+
+
+def test_apply_1():
+    c = icoll([1,2,3,4,6,8])
+    _l = []
+    def _f(x: int) -> None:
+        _l.append(x)
+    res = c.apply(_f).to_list()
+    assert res == [1,2,3,4,6,8]
+    assert _l == [1,2,3,4,6,8]
 
 
 def test_mapcat():
