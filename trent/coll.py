@@ -50,7 +50,13 @@ class EmptyCollectionException(Exception):
 
 
 class icoll(Iterable[T]):
+    """Represents a lazy sequence of type `T`"""    
     def __init__(self, collection: Optional[Iterable[T]] = None) -> None:
+        """Create a lazy sequence `icoll`, with given Iterables collection. Or empty - if None.
+
+        Args:
+            collection (Optional[Iterable[T]], optional): Initial sequence to be iterated over. Defaults to None.
+        """        
         self._coll: Iterable[T]
         self._iterator: Iterator[T]
         self._is_iterated: bool = False
@@ -61,6 +67,11 @@ class icoll(Iterable[T]):
     
     @property
     def collection(self) -> Iterable[T]:
+        """Iternal Iterable collection. WARNING: iterating over it outside of class methods may break youre code.
+
+        Returns:
+            Iterable[T]: Internal Iterable sequnce
+        """        
         return self._coll
     
     # =================================================================
@@ -84,15 +95,40 @@ class icoll(Iterable[T]):
     #           MAPS
     
     def map(self, f: Callable[[T], S]) -> icoll[S]:
+        """Maps over the elements of collection with function `f(el: T) -> S`, and retrun a new collection icoll[S].
+
+        Args:
+            f (Callable[[T], S]): Callable to process sequence elements.
+
+        Returns:
+            icoll[S]: New collection.
+        """        
         return self._step(map(f, self._coll))
     
     
     def pmap(self, f: Callable[[T], S]) -> icoll[S]:
+        """Performes `map` in parallel.
+
+        Args:
+            f (Callable[[T], S]): Fuction to map elements with
+
+        Returns:
+            icoll[S]: New collection.
+        """        
         __map = TRENT_THREADPOOL.map(f, self._coll)
         return self._step(__map)
     
     
     def pmap_(self, f: Callable[[T], S], threads: int = CPU_COUNT) -> icoll[S]:
+        """Performed `map` in parallel. And a number of threads to use can be defined.
+
+        Args:
+            f (Callable[[T], S]): Function to map elements with
+            threads (int, optional): A number of async threads to use for maing. Defaults to CPU_COUNT.
+
+        Returns:
+            icoll[S]: New collection
+        """        
         assert threads >= 1, 'Async Thread count CAN NOT be < 1'
         if threads == 1:
             return self.map(f)
@@ -102,20 +138,57 @@ class icoll(Iterable[T]):
     
     
     def mapcat(self, f: Callable[[T], Iterable[T1]]) -> icoll[T1]:
+        """Maps elements with function `f(el) -> Iterable`, and concatenates resulting collectinns of iterables.
+
+        Args:
+            f (Callable[[T], Iterable[T1]]): Function to map elements with. MUST return an Iterable.
+
+        Returns:
+            icoll[T1]: New collection.
+        """        
         m = map(f, self._coll)
         m = reduce(chain, m, iter([]))
         return self._step(m)
     
     
     def cat(self) -> icoll[Any]:
+        """Concatenates
+
+        Returns:
+            icoll[Any]: _description_
+        """        
         return self.mapcat(identity) # type: ignore
     
     
     def catmap(self, f: Callable[[Any], T1]) -> icoll[T1]:
+        """Concatenates sequence, and than - performes a `map` over elements with funcion `f`
+
+        Args:
+            f (Callable[[Any], T1]): Function to map elements with
+
+        Returns:
+            icoll[T1]: New collection
+        """        
         return self.cat().map(f)
     
     
     def apply(self, f:Callable[[T], Optional[Any]]) -> icoll[T]:
+        """Applyes function  `f` to all elements, but not maps elements to new values. Resulting coll witll have the same elements.
+        Usefull for:
+            - Updating dict elements in icoll[dict]
+            - calling methods on class-objects:
+             
+            ```
+            lst: icoll[God] = lst.apply(Dog.bark)
+            ```
+            - calling functions in icoll[Callable]
+
+        Args:
+            f (Callable[[T], Optional[Any]]): Function to apply to elements
+
+        Returns:
+            icoll[T]: Collection of the same elements
+        """        
         def __apply(el: T) -> T:
             f(el)
             return el
