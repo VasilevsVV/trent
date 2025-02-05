@@ -72,7 +72,7 @@ def test_pairmap_2():
         return f'{id}->{sum}'
     c = icoll(range(30))
     res = c.group_by(__mod10).pairmap(__add)
-    print(list(res))
+    assert res.to_list() == ['0->45', '1->145', '2->245']
 
 
 def test_groupmap():
@@ -87,4 +87,4 @@ def test_groupmap():
 
 
 if __name__ == '__main__':
-    test_groupmap()
+    test_pairmap_2()
