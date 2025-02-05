@@ -152,16 +152,20 @@ class icoll(Iterable[T]):
     
     
     def cat(self) -> icoll[Any]:
-        """Concatenates
+        """Concatenates sequence of Iterables into one sequence.
+        ```
+        c = seq([[1, 2], [3, 4]]).cat()
+        assert c.to_list() == [1, 2, 3, 4]
+        ```
 
         Returns:
-            icoll[Any]: _description_
+            icoll[Any]: New collection
         """        
         return self.mapcat(identity) # type: ignore
     
     
     def catmap(self, f: Callable[[Any], T1]) -> icoll[T1]:
-        """Concatenates sequence, and than - performes a `map` over elements with funcion `f`
+        """Concatenate sequence (as in cat()), and than - performe a `map` over elements with funcion `f`
 
         Args:
             f (Callable[[Any], T1]): Function to map elements with
@@ -282,6 +286,17 @@ class icoll(Iterable[T]):
     #           PAIRED
     
     def pairmap(self, f:Callable[[Any, Any], T1]) -> icoll[T1]:
+        """Map over paired elements (tuple, list, Iterable, etc.) with `f(arg1, arg2)` function.
+        WARNING: sequence elements MUST be iterables.
+        NOTE: Iterable elements can contain more than 2 elements, but extra values will be lost.
+        NOTE: If elements contain less than 2 values - `None` will be passed to `f` instead.
+
+        Args:
+            f (Callable[[Any, Any], T1]): _description_
+
+        Returns:
+            icoll[T1]: _description_
+        """        
         return self.map(lambda p: f(first(p), second(p)))
     
     
