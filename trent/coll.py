@@ -196,10 +196,26 @@ class icoll(Iterable[T]):
     
     
     def filter(self, f: Callable[[T], Any]) -> icoll[T]:
+        """Filter elements in sequence by predicate `f`. (remove `el` if `not f(el)y)
+
+        Args:
+            f (Callable[[T], Any]): Predicate function
+
+        Returns:
+            icoll[T]: New collection
+        """        
         return self._step(filter(f, self._coll))
     
     
     def remove(self, f: Callable[[T], Any]) -> icoll[T]:
+        """Removed elements from sequence by predicate `f`. (remove `el` if `f(el)`)
+
+        Args:
+            f (Callable[[T], Any]): Predicate function
+
+        Returns:
+            icoll[T]: New collection
+        """        
         _f = complement(f)
         return self.filter(_f)
     
@@ -220,10 +236,25 @@ class icoll(Iterable[T]):
     
     
     def unique(self) -> icoll[T]:
+        """Remove all duplicate elements in sequence.
+        WARN: demands extra RAM.
+
+        Returns:
+            icoll[T]: New collection of unique elements.
+        """        
         return self.distinct_by(identity)
     
     
     def distinct_by(self, f:Callable[[Any], Hashable]=identity) -> icoll[T]:
+        """Remove duplicate elements by predicate `f`.
+        (Remove `el` of `f(el)` is already present)
+
+        Args:
+            f (Callable[[Any], Hashable], optional): Predicate function. Defaults to identity.
+
+        Returns:
+            icoll[T]: New collection.
+        """        
         __pred = DistinctFilter(f)
         return self.filter(__pred)
     
@@ -231,10 +262,19 @@ class icoll(Iterable[T]):
     #           TAKE
     
     def take(self, n: int)-> icoll[T]:
+        """Take `n` elements from sequence."""        
         assert n >= 0, 'You can only `take` >= 0 elements!'
         return self._step(take(n, self._coll))
     
     def takewhile(self, predicate:Callable[[T], bool]) -> icoll[T]:
+        """Take elements while `predicate(el)`.
+
+        Args:
+            predicate (Callable[[T], bool]): Predicate function
+
+        Returns:
+            icoll[T]: New collection
+        """        
         return self._step(takewhile(predicate, self._coll))
     
     
