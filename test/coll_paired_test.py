@@ -1,4 +1,4 @@
-from typing import Sequence
+from typing import Optional, Sequence
 from trent.coll import icoll
 
 
@@ -72,7 +72,17 @@ def test_pairmap_2():
         return f'{id}->{sum}'
     c = icoll(range(30))
     res = c.group_by(__mod10).pairmap(__add)
-    print(list(res))
+    assert res.to_list() == ['0->45', '1->145', '2->245']
+
+
+def test_pairmap_3():
+    def __add(n1: int, n2: Optional[int]):
+        if n2 is None:
+            return n1
+        return n1 + n2
+    c = icoll([(1,2), (3, ), (5,6)])
+    res = c.pairmap(__add)
+    assert list(res) == [3, 3, 11]
 
 
 def test_groupmap():
@@ -87,4 +97,4 @@ def test_groupmap():
 
 
 if __name__ == '__main__':
-    test_groupmap()
+    test_pairmap_2()
