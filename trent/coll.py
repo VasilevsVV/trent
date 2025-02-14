@@ -20,7 +20,7 @@ from typing import (
 
 from funcy import complement, filter, take
 
-from trent.aux import DistinctFilter, Rangifier
+from trent.coll_aux import DistinctFilter, Rangifier
 from trent.concur import CPU_COUNT, TRENT_THREADPOOL
 from trent.func import identity, isnone
 from trent.nth import MissingValueException, first, first_, second, second_
@@ -50,7 +50,13 @@ class EmptyCollectionException(Exception):
 
 
 class icoll(Iterable[T]):
+    """Represents a lazy sequence of type `T`"""    
     def __init__(self, collection: Optional[Iterable[T]] = None) -> None:
+        """Create a lazy sequence `icoll`, with given Iterables collection. Or empty - if None.
+
+        Args:
+            collection (Optional[Iterable[T]], optional): Initial sequence to be iterated over. Defaults to None.
+        """        
         self._coll: Iterable[T]
         self._iterator: Iterator[T]
         self._is_iterated: bool = False
@@ -61,6 +67,11 @@ class icoll(Iterable[T]):
     
     @property
     def collection(self) -> Iterable[T]:
+        """Iternal Iterable collection. WARNING: iterating over it outside of class methods may break youre code.
+
+        Returns:
+            Iterable[T]: Internal Iterable sequnce
+        """        
         return self._coll
     
     # =================================================================
@@ -84,15 +95,40 @@ class icoll(Iterable[T]):
     #           MAPS
     
     def map(self, f: Callable[[T], S]) -> icoll[S]:
+        """Maps over the elements of collection with function `f(el: T) -> S`, and retrun a new collection icoll[S].
+
+        Args:
+            f (Callable[[T], S]): Callable to process sequence elements.
+
+        Returns:
+            icoll[S]: New collection.
+        """        
         return self._step(map(f, self._coll))
     
     
     def pmap(self, f: Callable[[T], S]) -> icoll[S]:
+        """Performes `map` in parallel.
+
+        Args:
+            f (Callable[[T], S]): Fuction to map elements with
+
+        Returns:
+            icoll[S]: New collection.
+        """        
         __map = TRENT_THREADPOOL.map(f, self._coll)
         return self._step(__map)
     
     
     def pmap_(self, f: Callable[[T], S], threads: int = CPU_COUNT) -> icoll[S]:
+        """Performed `map` in parallel. And a number of threads to use can be defined.
+
+        Args:
+            f (Callable[[T], S]): Function to map elements with
+            threads (int, optional): A number of async threads to use for maing. Defaults to CPU_COUNT.
+
+        Returns:
+            icoll[S]: New collection
+        """        
         assert threads >= 1, 'Async Thread count CAN NOT be < 1'
         if threads == 1:
             return self.map(f)
@@ -102,20 +138,61 @@ class icoll(Iterable[T]):
     
     
     def mapcat(self, f: Callable[[T], Iterable[T1]]) -> icoll[T1]:
+        """Maps elements with function `f(el) -> Iterable`, and concatenates resulting collectinns of iterables.
+
+        Args:
+            f (Callable[[T], Iterable[T1]]): Function to map elements with. MUST return an Iterable.
+
+        Returns:
+            icoll[T1]: New collection.
+        """        
         m = map(f, self._coll)
         m = reduce(chain, m, iter([]))
         return self._step(m)
     
     
     def cat(self) -> icoll[Any]:
+        """Concatenates sequence of Iterables into one sequence.
+        ```
+        c = seq([[1, 2], [3, 4]]).cat()
+        assert c.to_list() == [1, 2, 3, 4]
+        ```
+
+        Returns:
+            icoll[Any]: New collection
+        """        
         return self.mapcat(identity) # type: ignore
     
     
     def catmap(self, f: Callable[[Any], T1]) -> icoll[T1]:
+        """Concatenate sequence (as in cat()), and than - performe a `map` over elements with funcion `f`
+
+        Args:
+            f (Callable[[Any], T1]): Function to map elements with
+
+        Returns:
+            icoll[T1]: New collection
+        """        
         return self.cat().map(f)
     
     
     def apply(self, f:Callable[[T], Optional[Any]]) -> icoll[T]:
+        """Applyes function  `f` to all elements, but not maps elements to new values. Resulting coll witll have the same elements.
+        Usefull for:
+            - Updating dict elements in icoll[dict]
+            - calling methods on class-objects:
+             
+            ```
+            lst: icoll[God] = lst.apply(Dog.bark)
+            ```
+            - calling functions in icoll[Callable]
+
+        Args:
+            f (Callable[[T], Optional[Any]]): Function to apply to elements
+
+        Returns:
+            icoll[T]: Collection of the same elements
+        """        
         def __apply(el: T) -> T:
             f(el)
             return el
@@ -123,15 +200,36 @@ class icoll(Iterable[T]):
     
     
     def filter(self, f: Callable[[T], Any]) -> icoll[T]:
+        """Filter elements in sequence by predicate `f`. (remove `el` if `not f(el)y)
+
+        Args:
+            f (Callable[[T], Any]): Predicate function
+
+        Returns:
+            icoll[T]: New collection
+        """        
         return self._step(filter(f, self._coll))
     
     
     def remove(self, f: Callable[[T], Any]) -> icoll[T]:
+        """Removed elements from sequence by predicate `f`. (remove `el` if `f(el)`)
+
+        Args:
+            f (Callable[[T], Any]): Predicate function
+
+        Returns:
+            icoll[T]: New collection
+        """        
         _f = complement(f)
         return self.filter(_f)
     
     
-    def remove_none(self) -> icoll[Any]:
+    @overload
+    def remove_none(self) -> icoll[Any]: ...
+    @overload
+    def remove_none(self, * _types: type[S]) -> icoll[S]: ...
+    
+    def remove_none(self, * _types): # type: ignore
         """WARNING: removes typehinting for given `coll`. Returns icoll[Any].
         Use only for avoiding typehint warnings about None type!
 
@@ -142,10 +240,25 @@ class icoll(Iterable[T]):
     
     
     def unique(self) -> icoll[T]:
+        """Remove all duplicate elements in sequence.
+        WARN: demands extra RAM.
+
+        Returns:
+            icoll[T]: New collection of unique elements.
+        """        
         return self.distinct_by(identity)
     
     
     def distinct_by(self, f:Callable[[Any], Hashable]=identity) -> icoll[T]:
+        """Remove duplicate elements by predicate `f`.
+        (Remove `el` of `f(el)` is already present)
+
+        Args:
+            f (Callable[[Any], Hashable], optional): Predicate function. Defaults to identity.
+
+        Returns:
+            icoll[T]: New collection.
+        """        
         __pred = DistinctFilter(f)
         return self.filter(__pred)
     
@@ -153,10 +266,19 @@ class icoll(Iterable[T]):
     #           TAKE
     
     def take(self, n: int)-> icoll[T]:
+        """Take `n` elements from sequence."""        
         assert n >= 0, 'You can only `take` >= 0 elements!'
         return self._step(take(n, self._coll))
     
     def takewhile(self, predicate:Callable[[T], bool]) -> icoll[T]:
+        """Take elements while `predicate(el)`.
+
+        Args:
+            predicate (Callable[[T], bool]): Predicate function
+
+        Returns:
+            icoll[T]: New collection
+        """        
         return self._step(takewhile(predicate, self._coll))
     
     
@@ -164,6 +286,17 @@ class icoll(Iterable[T]):
     #           PAIRED
     
     def pairmap(self, f:Callable[[Any, Any], T1]) -> icoll[T1]:
+        """Map over paired elements (tuple, list, Iterable, etc.) with `f(arg1, arg2)` function.
+        WARNING: sequence elements MUST be iterables.
+        NOTE: Iterable elements can contain more than 2 elements, but extra values will be lost.
+        NOTE: If elements contain less than 2 values - `None` will be passed to `f` instead.
+
+        Args:
+            f (Callable[[Any, Any], T1]): _description_
+
+        Returns:
+            icoll[T1]: _description_
+        """        
         return self.map(lambda p: f(first(p), second(p)))
     
     
