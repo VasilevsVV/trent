@@ -1,3 +1,4 @@
+from itertools import chain
 from trent.coll import icoll, persistent_coll
 
 def _rng(n: int):
@@ -138,6 +139,31 @@ def test_takewhile():
     assert list(res) == [0, 1, 2, 3, 4, 5]
 
 
+def test_partition_1():
+    c = icoll(range(6))
+    res = c.partition(2).map(tuple)
+    assert list(res) == [(0, 1), (2, 3), (4, 5)]
+
+
+def test_partition_2():
+    c = icoll(range(5))
+    res = c.partition(3).map(list)
+    assert list(res) == [[0, 1, 2], [3, 4]]
+
+
+def test_partition_3():
+    c = icoll(range(5))
+    res = c.partition(2).cat()
+    assert list(res) == [0, 1, 2, 3, 4]
+
+
+def test_partition_by_1():
+    c = icoll(range(6))
+    res = c.partition_by(lambda n: n % 2 == 0)
+    assert list(res) == [[0, 1], [2, 3], [4, 5]]
+
+
+    
 def test_cat():
     c = icoll([[1, 2, 3], [4, 5]])
     res = c.cat()
@@ -151,3 +177,7 @@ def test_persistent_coll():
     
     assert list(res) == [1, 16, 81]
     assert list(res) == [1, 16, 81]
+
+
+if __name__ == '__main__':
+    test_partition_5()
