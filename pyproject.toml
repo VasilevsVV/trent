@@ -14,10 +14,7 @@ maintainers = [
     {name = "Vasyl Tsiura", email = "morfey.rulit@gmail.com"}
 ]
 
-description = '''
-Convenient Sequence/Iterable/Collection processing for python.
-Inspired by Clojure mapping and threading macros.
-'''
+description = "Convenient Sequence/Iterable/Collection processing for python. Inspired by Clojure mapping and threading macros."
 
 readme = "README.md"
 requires-python = ">=3.10.12"
