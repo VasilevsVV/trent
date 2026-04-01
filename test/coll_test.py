@@ -31,15 +31,15 @@ def test_mapping_2():
     assert isinstance(res[0], str)
     assert res == ['1', '2', '3']
 
-def test_pmap_1():
-    c = icoll(range(100))
-    res = c.pmap(_fact)
-    assert list(res) == [_fact(i) for i in range(100)]
+def test_async_map_1():
+    c = icoll(range(10))
+    res = c.async_map(_fact)
+    assert list(res) == [_fact(i) for i in range(10)]
 
 
-def test_pmap_2():
+def test_async_map_2():
     c = icoll(range(100))
-    res = c.pmap_(_fact, 2)
+    res = c.async_map_(_fact, 2)
     assert list(res) == [_fact(i) for i in range(100)]
 
 
@@ -180,4 +180,4 @@ def test_persistent_coll():
 
 
 if __name__ == '__main__':
-    test_partition_5()
+    test_async_map_1()
