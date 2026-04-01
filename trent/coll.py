@@ -22,7 +22,7 @@ from typing import (
 from funcy import complement, filter, take
 
 from trent.coll_aux import DistinctFilter, PartByCounter, PartCounter, Rangifier
-from trent.concur import CPU_COUNT, TRENT_MP_POOL, TRENT_THREADPOOL
+from trent.concur import CPU_COUNT, TRENT_THREADPOOL
 from trent.func import identity, isnone
 from trent.nth import MissingValueException, first, first_, second, second_
 
@@ -117,8 +117,9 @@ class icoll(Iterable[T]):
 
         Returns:
             icoll[S]: New collection.
-        """        
-        __map = TRENT_MP_POOL.map(f, self._coll)
+        """
+        with Pool(max(int(CPU_COUNT / 4), 2)) as pool:
+            __map = pool.map(f, self._coll)
         return self._step(__map)
     
     
