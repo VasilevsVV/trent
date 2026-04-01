@@ -3,6 +3,7 @@ from __future__ import annotations
 import concurrent.futures as conc
 from functools import cache, reduce
 from itertools import chain, takewhile
+from multiprocessing import Pool
 from pprint import pprint
 from time import sleep
 from typing import (
@@ -21,7 +22,7 @@ from typing import (
 from funcy import complement, filter, take
 
 from trent.coll_aux import DistinctFilter, Rangifier
-from trent.concur import CPU_COUNT, TRENT_THREADPOOL
+from trent.concur import CPU_COUNT, TRENT_MP_POOL, TRENT_THREADPOOL
 from trent.func import identity, isnone
 from trent.nth import MissingValueException, first, first_, second, second_
 
@@ -107,7 +108,9 @@ class icoll(Iterable[T]):
     
     
     def pmap(self, f: Callable[[T], S]) -> icoll[S]:
-        """Performes `map` in parallel.
+        """Performes `map` in parallel. 
+        Uses "multiprocessing" lib.
+        Executes tasks in separate processes. Use for CPU bound tasks
 
         Args:
             f (Callable[[T], S]): Fuction to map elements with
@@ -115,12 +118,14 @@ class icoll(Iterable[T]):
         Returns:
             icoll[S]: New collection.
         """        
-        __map = TRENT_THREADPOOL.map(f, self._coll)
+        __map = TRENT_MP_POOL.map(f, self._coll)
         return self._step(__map)
     
     
-    def pmap_(self, f: Callable[[T], S], threads: int = CPU_COUNT) -> icoll[S]:
+    def pmap_(self, f: Callable[[T], S], threads: int = int(CPU_COUNT / 4)) -> icoll[S]:
         """Performed `map` in parallel. And a number of threads to use can be defined.
+        Uses "multiprocessing" lib.
+        Executes tasks in separate processes. Use for CPU bound tasks
 
         Args:
             f (Callable[[T], S]): Function to map elements with
@@ -132,7 +137,42 @@ class icoll(Iterable[T]):
         assert threads >= 1, 'Async Thread count CAN NOT be < 1'
         if threads == 1:
             return self.map(f)
-        with conc.ThreadPoolExecutor(threads) as p:
+        with Pool(threads) as p:
+            __map = p.map(f, self._coll)
+        return self._step(__map)
+    
+
+    def async_map(self, f: Callable[[T], S]) -> icoll[S]:
+        """Performes `map` asyncronously.
+        Uses "concur" lib.
+        Executes tasks in current process. Use for Disk/Network bound tasks
+
+        Args:
+            f (Callable[[T], S]): Fuction to map elements with
+
+        Returns:
+            icoll[S]: New collection.
+        """        
+        __map = TRENT_THREADPOOL.map(f, self._coll)
+        return self._step(__map)
+    
+    
+    def async_map_(self, f: Callable[[T], S], threads: int = int(CPU_COUNT / 4)) -> icoll[S]:
+        """Performed `map` asyncronously. And a number of threads to use can be defined.
+        Uses "concur" lib.
+        Executes tasks in current process. Use for Disk/Network bound tasks
+
+        Args:
+            f (Callable[[T], S]): Function to map elements with
+            threads (int, optional): A number of async threads to use for maing. Defaults to CPU_COUNT.
+
+        Returns:
+            icoll[S]: New collection
+        """        
+        assert threads >= 1, 'Async Thread count CAN NOT be < 1'
+        if threads == 1:
+            return self.map(f)
+        with conc.ThreadPoolExecutor(CPU_COUNT * 2, 'trent') as p:
             __map = p.map(f, self._coll)
         return self._step(__map)
     

@@ -2,7 +2,7 @@ import concurrent.futures as conc
 import psutil
 
 
-import multiprocessing
+from multiprocessing import Pool
 
 
 def cpu_count() -> int:
@@ -24,3 +24,4 @@ def cpu_count() -> int:
 
 CPU_COUNT = cpu_count()
 TRENT_THREADPOOL = conc.ThreadPoolExecutor(CPU_COUNT * 2, 'trent')
+TRENT_MP_POOL = Pool(max(int(CPU_COUNT / 4), 2))
