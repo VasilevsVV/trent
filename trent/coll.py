@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import concurrent.futures as conc
 from functools import cache, reduce
-from itertools import chain, takewhile
+from itertools import chain, groupby, takewhile
 from pprint import pprint
 from time import sleep
 from typing import (
@@ -20,7 +20,7 @@ from typing import (
 
 from funcy import complement, filter, take
 
-from trent.coll_aux import DistinctFilter, Rangifier
+from trent.coll_aux import DistinctFilter, PartByCounter, PartCounter, Rangifier
 from trent.concur import CPU_COUNT, TRENT_THREADPOOL
 from trent.func import identity, isnone
 from trent.nth import MissingValueException, first, first_, second, second_
@@ -147,7 +147,7 @@ class icoll(Iterable[T]):
             icoll[T1]: New collection.
         """        
         m = map(f, self._coll)
-        m = reduce(chain, m, iter([]))
+        m = chain(* m)
         return self._step(m)
     
     
@@ -160,7 +160,7 @@ class icoll(Iterable[T]):
 
         Returns:
             icoll[Any]: New collection
-        """        
+        """
         return self.mapcat(identity) # type: ignore
     
     
@@ -281,6 +281,41 @@ class icoll(Iterable[T]):
         """        
         return self._step(takewhile(predicate, self._coll))
     
+    
+    def partition(self, partition_size: int, /) -> icoll[list[T]]:
+        """Partition sequence into chunks of size `partition_size`.
+
+        Args:
+            partition_size (int): Size of partitions
+
+        Returns:
+            icoll[list[T]]: New collection.
+        """        
+        groups = groupby(self._coll, PartCounter(partition_size))
+        c = map(second_, groups)
+        c = map(list, c)
+        return self._step(c)
+    
+    
+    def partition_by(self, pred: Callable[[T], Any]) -> icoll[list[T]]:
+        """Partition sequence int ochunks devided by predicate `pred`.
+        Where every time `pred(value)` return True - a new partition will be created.
+        ```
+        c = icoll(range(6))
+        c.partition_by(lambda n: n % 2 == 0).to_list() == [[0, 1], [2, 3], [4, 5]]
+        ```
+
+        Args:
+            pred (Callable[[T], Any]): Predicate to devide sequence into chunks by.
+
+        Returns:
+            icoll[list[T]]: New collection.
+        """        
+        groups = groupby(self._coll, PartByCounter(pred))
+        c = map(second_, groups)
+        c = map(list, c)
+        return self._step(c)
+        
     
     # ==================================================================
     #           PAIRED

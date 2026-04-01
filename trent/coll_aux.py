@@ -1,4 +1,4 @@
-from typing import Callable, Generic, Hashable, Tuple, TypeVar
+from typing import Any, Callable, Generic, Hashable, Tuple, TypeVar
 
 
 T = TypeVar('T')
@@ -26,3 +26,29 @@ class Rangifier(Generic[T]):
         res = (self.__prev, val)
         self.__prev = val
         return res
+
+
+class PartCounter:
+    def __init__(self, count: int) -> None:
+        self.__count = count
+        self.__i = 0
+        self.__part_number = 0
+        
+    def __call__(self, *_) -> int:
+        if self.__i >= self.__count:
+            self.__i = 0
+            self.__part_number += 1
+        self.__i += 1
+        return self.__part_number
+    
+
+
+class PartByCounter:
+    def __init__(self, pred: Callable[[Any], bool]) -> None:
+        self._pred = pred
+        self.__part_number = 0
+        
+    def __call__(self, value) -> int:
+        if self._pred(value):
+            self.__part_number += 1
+        return self.__part_number
