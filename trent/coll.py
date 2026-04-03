@@ -173,7 +173,7 @@ class icoll(Iterable[T]):
         assert threads >= 1, 'Async Thread count CAN NOT be < 1'
         if threads == 1:
             return self.map(f)
-        with conc.ThreadPoolExecutor(CPU_COUNT * 2, 'trent') as p:
+        with conc.ThreadPoolExecutor(threads, 'trent') as p:
             __map = p.map(f, self._coll)
         return self._step(__map)
     
