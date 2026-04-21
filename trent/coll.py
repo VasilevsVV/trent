@@ -321,41 +321,6 @@ class icoll(Iterable[T]):
             icoll[T]: New collection
         """        
         return self._step(takewhile(predicate, self._coll))
-    
-    
-    def partition(self, partition_size: int, /) -> icoll[list[T]]:
-        """Partition sequence into chunks of size `partition_size`.
-
-        Args:
-            partition_size (int): Size of partitions
-
-        Returns:
-            icoll[list[T]]: New collection.
-        """        
-        groups = groupby(self._coll, PartCounter(partition_size))
-        c = map(second_, groups)
-        c = map(list, c)
-        return self._step(c)
-    
-    
-    def partition_by(self, pred: Callable[[T], Any]) -> icoll[list[T]]:
-        """Partition sequence int ochunks devided by predicate `pred`.
-        Where every time `pred(value)` return True - a new partition will be created.
-        ```
-        c = icoll(range(6))
-        c.partition_by(lambda n: n % 2 == 0).to_list() == [[0, 1], [2, 3], [4, 5]]
-        ```
-
-        Args:
-            pred (Callable[[T], Any]): Predicate to devide sequence into chunks by.
-
-        Returns:
-            icoll[list[T]]: New collection.
-        """        
-        groups = groupby(self._coll, PartByCounter(pred))
-        c = map(second_, groups)
-        c = map(list, c)
-        return self._step(c)
         
     
     # ==================================================================
@@ -395,12 +360,70 @@ class icoll(Iterable[T]):
                 res[k] = [v]
         return res
     
+    # ==================================================================
+    #           PARTITIONED
+
+    def partition(self, partition_size: int, /) -> icoll[list[T]]:
+        """Partition sequence into chunks of size `partition_size`.
+
+        Args:
+            partition_size (int): Size of partitions
+
+        Returns:
+            icoll[list[T]]: New collection.
+        """        
+        groups = groupby(self._coll, PartCounter(partition_size))
+        c = map(second_, groups)
+        c = map(list, c)
+        return self._step(c)
     
+    
+    def partition_by(self, pred: Callable[[T], Any]) -> icoll[list[T]]:
+        """Partition sequence int ochunks devided by predicate `pred`.
+        Where every time `pred(value)` return True - a new partition will be created.
+        ```
+        c = icoll(range(6))
+        c.partition_by(lambda n: n % 2 == 0).to_list() == [[0, 1], [2, 3], [4, 5]]
+        ```
+
+        Args:
+            pred (Callable[[T], Any]): Predicate to devide sequence into chunks by.
+
+        Returns:
+            icoll[list[T]]: New collection.
+        """        
+        groups = groupby(self._coll, PartByCounter(pred))
+        c = map(second_, groups)
+        c = map(list, c)
+        return self._step(c)
+    
+
+    def map_partitions(self, f: Callable[[Any], S]) -> icoll[Iterable[S]]:
+        def __f(__part: Iterable) -> Iterable[S]:
+            return map(f, __part)
+        return self.map(__f).map(list) # type: ignore
+    
+
+    def async_map_partitions_(self, f: Callable[[Any], S], /, *, threads: Optional[int] = None):
+        __threads = threads if threads else CPU_COUNT * 2
+        assert __threads >= 1, 'Async Thread count CAN NOT be < 1'
+        if __threads == 1:
+            return self.map_partitions(f)
+        def __f(__part: Iterable) -> Iterable[S]:
+            with conc.ThreadPoolExecutor(__threads, 'trent') as p:
+                __map = p.map(f, __part)
+                return __map
+        return self.map(__f).map(list) # type: ignore
+    
+
+    # ==================================================================
+    #           GROUPED
+
     def group_by(self, f:Callable[[T], T1], val_fn: Callable[[T], T2] = identity) -> icoll[tuple[T1, list[T2]]]:
         d = self.group_by_to_dict(f, val_fn)
         return self._step(d.items())
     
-    
+
     @overload
     def groupmap(self) -> icoll[tuple[Any, Any]]: ...
     @overload
@@ -611,7 +634,6 @@ class paired_coll(icoll, Iterable[Tuple[T1, T2]]):
 
 
 if __name__ == '__main__':
-    # c = paired_coll({1: 10}.items())
-    # print(c)
-    print(dict([(1,10), (2, 20)]))
-    pass
+    c = icoll([range(100), range(100,200)])
+    c = c.map_partitions(lambda x: x*10)
+    print(list(c))
