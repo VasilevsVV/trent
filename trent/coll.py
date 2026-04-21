@@ -399,7 +399,7 @@ class icoll(Iterable[T]):
         return self._step(c)
     
 
-    def map_partitions(self, f: Callable[[Any], S]) -> icoll[List[S]]:
+    def partmap(self, f: Callable[[Any], S]) -> icoll[List[S]]:
         """Map over elements in partitioned sequence (Sequence of Iterable[T]).
         For convenience, if you want to map elements, without concatenating partitions.
         WARNING: sequence elements MUST be iterables.
@@ -416,7 +416,7 @@ class icoll(Iterable[T]):
         return self.map(__f).map(list) # type: ignore
     
 
-    def async_map_partitions(self, f: Callable[[Any], S]) -> icoll[List[S]]:
+    def async_partmap(self, f: Callable[[Any], S]) -> icoll[List[S]]:
         """Asyncronous Map over elements in partitioned sequence (Sequence of Iterable[T]).
         For convenience, if you want to map elements, without concatenating partitions.
         WARNING: sequence elements MUST be iterables.
@@ -433,7 +433,7 @@ class icoll(Iterable[T]):
         return self.map(__f).map(list) # type: ignore
     
 
-    def async_map_partitions_(self, f: Callable[[Any], S], threads: Optional[int] = None, /) -> icoll[List[S]]:
+    def async_partmap_(self, f: Callable[[Any], S], threads: Optional[int] = None, /) -> icoll[List[S]]:
         """Asyncronous Map over elements in partitioned sequence (Sequence of Iterable[T]).
         For convenience, if you want to map elements, without concatenating partitions.
         WARNING: sequence elements MUST be iterables.
@@ -449,7 +449,7 @@ class icoll(Iterable[T]):
         __threads = threads if threads else CPU_COUNT * 2
         assert __threads >= 1, 'Async Thread count CAN NOT be < 1'
         if __threads == 1:
-            return self.map_partitions(f)
+            return self.partmap(f)
         def __f(__part: Iterable) -> Iterable[S]:
             with conc.ThreadPoolExecutor(__threads, 'trent') as p:
                 __map = p.map(f, __part)
@@ -632,13 +632,3 @@ class persistent_coll(icoll, Iterable[T]):
             raise StopIteration
         self.__buffer.append(res)
         return res
-
-
-
-if __name__ == '__main__':
-    ds = []
-    for i in range(10):
-        ds.append(range(i*1000, i*1000+1000))
-    c = icoll(ds)
-    c = c.async_map_partitions(lambda x: x*10)
-    print(list(c)[0])
