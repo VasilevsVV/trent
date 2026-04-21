@@ -416,7 +416,8 @@ class icoll(Iterable[T]):
         return self.map(__f).map(list) # type: ignore
     
 
-    def async_partmap(self, f: Callable[[Any], S]) -> icoll[List[S]]:
+    def async_partmap(self, f: Callable[[Any], S], /, *,
+                      threads: Optional[int] = None) -> icoll[List[S]]:
         """Asyncronous Map over elements in partitioned sequence (Sequence of Iterable[T]).
         For convenience, if you want to map elements, without concatenating partitions.
         WARNING: sequence elements MUST be iterables.
@@ -427,7 +428,9 @@ class icoll(Iterable[T]):
 
         Returns:
             icoll[List[S]]: New partitioned collection.
-        """        
+        """
+        if threads is not None:
+            return self.async_partmap_(f, threads)
         def __f(__part: Iterable) -> Iterable[S]:
             return TRENT_THREADPOOL.map(f, __part)
         return self.map(__f).map(list) # type: ignore
