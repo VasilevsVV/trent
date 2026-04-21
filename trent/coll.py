@@ -600,13 +600,8 @@ class icoll(Iterable[T]):
         # Persisting collection values. For easier debugging.
         # self._coll = list(self._coll)
         return f'coll({self._coll})'
-    
-    
-    # ===============================================================
-    #               UTIL
-    
-    def __group_pair_fn(self, f: Callable[[T], T1], val_fn: Callable[[T], T2] = identity) -> Callable[[T], Tuple[T1, T2]]:
-        return lambda val: (f(val), val_fn(val))
+
+
 
 
 class persistent_coll(icoll, Iterable[T]):
