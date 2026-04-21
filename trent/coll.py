@@ -13,6 +13,7 @@ from typing import (
     Hashable,
     Iterable,
     Iterator,
+    List,
     Optional,
     Tuple,
     TypeVar,
@@ -398,19 +399,53 @@ class icoll(Iterable[T]):
         return self._step(c)
     
 
-    def map_partitions(self, f: Callable[[Any], S]) -> icoll[Iterable[S]]:
+    def map_partitions(self, f: Callable[[Any], S]) -> icoll[List[S]]:
+        """Map over elements in partitioned sequence (Sequence of Iterable[T]).
+        For convenience, if you want to map elements, without concatenating partitions.
+        WARNING: sequence elements MUST be iterables.
+        NOTE: Resulted partitions will be converted to lists, for consistency.
+
+        Args:
+            f (Callable[[Any], S]): Callable to process sequence elements.
+
+        Returns:
+            icoll[List[S]]: New partitioned collection.
+        """
         def __f(__part: Iterable) -> Iterable[S]:
             return map(f, __part)
         return self.map(__f).map(list) # type: ignore
     
 
-    def async_map_partitions(self, f: Callable[[Any], S]):
+    def async_map_partitions(self, f: Callable[[Any], S]) -> icoll[List[S]]:
+        """Asyncronous Map over elements in partitioned sequence (Sequence of Iterable[T]).
+        For convenience, if you want to map elements, without concatenating partitions.
+        WARNING: sequence elements MUST be iterables.
+        NOTE: Resulted partitions will be converted to lists, for consistency.
+
+        Args:
+            f (Callable[[Any], S]): Callable to process sequence elements.
+
+        Returns:
+            icoll[List[S]]: New partitioned collection.
+        """        
         def __f(__part: Iterable) -> Iterable[S]:
             return TRENT_THREADPOOL.map(f, __part)
         return self.map(__f).map(list) # type: ignore
     
 
-    def async_map_partitions_(self, f: Callable[[Any], S], /, *, threads: Optional[int] = None):
+    def async_map_partitions_(self, f: Callable[[Any], S], /, *, threads: Optional[int] = None) -> icoll[List[S]]:
+        """Asyncronous Map over elements in partitioned sequence (Sequence of Iterable[T]).
+        For convenience, if you want to map elements, without concatenating partitions.
+        WARNING: sequence elements MUST be iterables.
+        NOTE: Resulted partitions will be converted to lists, for consistency.
+
+        Args:
+            f (Callable[[Any], S]): Callable to process sequence elements.
+            threads (Optional[int], optional): Number f async threads. Defaults to None.
+
+        Returns:
+            icoll[List[S]]: New partitioned collection.
+        """        
         __threads = threads if threads else CPU_COUNT * 2
         assert __threads >= 1, 'Async Thread count CAN NOT be < 1'
         if __threads == 1:
