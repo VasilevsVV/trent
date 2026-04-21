@@ -637,44 +637,11 @@ class persistent_coll(icoll, Iterable[T]):
             raise StopIteration
         self.__buffer.append(res)
         return res
-        
-        
-
-
-class paired_coll(icoll, Iterable[Tuple[T1, T2]]):
-    def __init__(self, collection: Iterable[Tuple[T1, T2]] | Dict[T1, T2] | None = None) -> None:
-        super().__init__(collection)
-        
-        
-    
-    
-    
-    def _init_collection(self, collection:Iterable[Tuple[T1, T2]]|Dict[T1, T2]|None = None) -> Iterable[Tuple[T1, T2]]:
-        if collection is None:
-            return []
-        elif isinstance(collection, paired_coll):
-            return collection._coll
-        elif isinstance(collection, Dict):
-            return collection.items() # type: ignore
-        elif isinstance(collection, Iterable):
-            return collection
-        else:
-            raise Exception(f'Invalid collection type: {type(collection)}. Expected Iterable!')
-    
-    
-    # def __step(self, __coll: Iterable[Tuple[T1, T2]]) -> paired_coll[T1, T2]:
-    #     return paired_coll(__coll)
-
-    
-    def pairmap(self, f:Callable[[T1, T2], S]) -> icoll[S]:
-        return self.map(lambda p: f(first_(p), second_(p)))
-
-
-
 
 
 
 if __name__ == '__main__':
+    ds = []
     c = icoll([range(100), range(100,200)])
     c = c.async_map_partitions(lambda x: x*10)
     print(list(c))
