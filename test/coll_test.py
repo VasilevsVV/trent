@@ -163,6 +163,26 @@ def test_partition_by_1():
     assert list(res) == [[0, 1], [2, 3], [4, 5]]
 
 
+def test_map_partition_1():
+    c = icoll([range(100), range(100, 200)])
+    res = c.map_partitions(lambda n: n * 10)
+    __res_val = [list(range(0, 1000, 10)), list(range(1000, 2000, 10))]
+    assert list(res) == __res_val
+
+
+def test_async_map_partition_1():
+    c = icoll([range(100), range(100, 200)])
+    res = c.async_map_partitions(lambda n: n * 10)
+    __res_val = [list(range(0, 1000, 10)), list(range(1000, 2000, 10))]
+    assert list(res) == __res_val
+
+
+def test_async_map_partition_2():
+    c = icoll([range(100), range(100, 200)])
+    res = c.async_map_partitions_(lambda n: n * 10, 4)
+    __res_val = [list(range(0, 1000, 10)), list(range(1000, 2000, 10))]
+    assert list(res) == __res_val
+
     
 def test_cat():
     c = icoll([[1, 2, 3], [4, 5]])
