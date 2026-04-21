@@ -433,7 +433,7 @@ class icoll(Iterable[T]):
         return self.map(__f).map(list) # type: ignore
     
 
-    def async_map_partitions_(self, f: Callable[[Any], S], /, *, threads: Optional[int] = None) -> icoll[List[S]]:
+    def async_map_partitions_(self, f: Callable[[Any], S], threads: Optional[int] = None, /) -> icoll[List[S]]:
         """Asyncronous Map over elements in partitioned sequence (Sequence of Iterable[T]).
         For convenience, if you want to map elements, without concatenating partitions.
         WARNING: sequence elements MUST be iterables.
@@ -637,6 +637,8 @@ class persistent_coll(icoll, Iterable[T]):
 
 if __name__ == '__main__':
     ds = []
-    c = icoll([range(100), range(100,200)])
+    for i in range(10):
+        ds.append(range(i*1000, i*1000+1000))
+    c = icoll(ds)
     c = c.async_map_partitions(lambda x: x*10)
-    print(list(c))
+    print(list(c)[0])
