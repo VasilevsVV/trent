@@ -404,6 +404,12 @@ class icoll(Iterable[T]):
         return self.map(__f).map(list) # type: ignore
     
 
+    def async_map_partitions(self, f: Callable[[Any], S]):
+        def __f(__part: Iterable) -> Iterable[S]:
+            return TRENT_THREADPOOL.map(f, __part)
+        return self.map(__f).map(list) # type: ignore
+    
+
     def async_map_partitions_(self, f: Callable[[Any], S], /, *, threads: Optional[int] = None):
         __threads = threads if threads else CPU_COUNT * 2
         assert __threads >= 1, 'Async Thread count CAN NOT be < 1'
@@ -635,5 +641,5 @@ class paired_coll(icoll, Iterable[Tuple[T1, T2]]):
 
 if __name__ == '__main__':
     c = icoll([range(100), range(100,200)])
-    c = c.map_partitions(lambda x: x*10)
+    c = c.async_map_partitions(lambda x: x*10)
     print(list(c))
