@@ -33,7 +33,7 @@ T2 = TypeVar('T2')
 S = TypeVar('S')
 
 
-class __no_value():
+class _no_value():
     def __init__(self) -> None:
         pass
 
@@ -66,6 +66,7 @@ class icoll(Iterable[T]):
             self._coll = collection
         else:
             self._coll = []
+        self.__head: T|_no_value = _no_value()
     
     @property
     def collection(self) -> Iterable[T]:
@@ -75,6 +76,64 @@ class icoll(Iterable[T]):
             Iterable[T]: Internal Iterable sequnce
         """        
         return self._coll
+    
+
+    @property
+    def head(self) -> T:
+        """Get first element of the collection. Non-descructively.
+
+        Raises:
+            EmptyCollectionException: If collection is emty
+
+        Returns:
+            T: First element of the collection
+        
+        Examples:
+        If called on `empty` collection:
+        >>> icoll([]).head
+        Traceback (most recent call last):
+        EmptyCollectionException: Collection is empty! Can't take head of empty collection 
+        
+        On collection with `persistant` values:
+        >>> icoll([1,2,3]).head
+        1
+        
+        On collection with `iterator` (does not descruct iterator):
+        >>> c = icoll(range(3))
+        ... print(c.head)
+        0
+        ... print(c.to_list())
+        [0, 1, 2]
+        """
+        if isinstance(self.__head, _no_value):
+            self.__head = self._get_head()
+        return self.__head
+
+
+    @property
+    def empty(self) -> bool:
+        """Indicates if collection is empty.
+
+        Returns:
+            bool: _description_
+        
+        Examples:
+        >>> seq([]).empty
+        True
+        >>> seq([1,2,3]).empty
+        False
+        >>> c = seq(range(3))
+        >>> print(c.empty)
+        False
+        >>> print(c.to_list())
+        [0, 1, 2]
+        """        
+        try:
+            __ = self.head
+            return False
+        except EmptyCollectionException:
+            return True
+
     
     # =================================================================
     #           TODO
@@ -599,10 +658,33 @@ class icoll(Iterable[T]):
     def __next__(self) -> T:
         return self._next()
     
+
+    # ================================================================
+    #           AUXILIARY
+    
     def __repr__(self) -> str:
-        # Persisting collection values. For easier debugging.
-        # self._coll = list(self._coll)
         return f'coll({self._coll})'
+
+
+    def _get_head(self) -> T:
+        """Get first element of the collection. Non-descructively.
+
+        Raises:
+            EmptyCollectionException: If collection is emty
+
+        Returns:
+            T: First element of the collection
+        """
+        __iter = iter(self._coll)
+        try:
+            __head = next(__iter)
+        except StopIteration:
+            raise EmptyCollectionException("Can't take head of empty collection")
+        self._coll = chain([__head], __iter)
+        self._is_iterated = False
+        return __head
+        
+
 
 
 

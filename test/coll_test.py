@@ -1,5 +1,6 @@
 from itertools import chain
-from trent.coll import icoll, persistent_coll
+from trent.coll import EmptyCollectionException, icoll, persistent_coll
+from trent.interface import seq
 
 def _rng(n: int):
     return range(n)
@@ -204,5 +205,22 @@ def test_persistent_coll():
     assert list(res) == [1, 16, 81]
 
 
-if __name__ == '__main__':
-    test_async_map_1()
+def test_head_1():
+    c = seq([1,2,3])
+    assert c.head == 1
+    assert c.to_list() == [1,2,3]
+
+
+def test_head_2():
+    c = seq(range(3))
+    assert c.head == 0
+    assert c.to_list() == [0,1,2]
+
+def test_head_3():
+    c = seq(range(0))
+    err = None
+    try:
+        c.head
+    except EmptyCollectionException as e:
+        err = e
+    assert isinstance(err, EmptyCollectionException)
