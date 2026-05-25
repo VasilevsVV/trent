@@ -1,5 +1,6 @@
 from typing import Iterable, Optional, TypeVar
-from trent.coll import NestedIterationExceprion, icoll
+from trent.coll import icoll
+from trent.coll_aux import NestedIterationExceprion
 
 T = TypeVar('T')
 

@@ -2,6 +2,7 @@ from typing import Any, Callable, Dict, Iterable, Optional, Tuple, TypeVar, over
 
 from trent.coll import icoll
 from trent.concur import CPU_COUNT
+from trent.paired_coll import paired_icoll
 
 
 T = TypeVar('T')
@@ -67,11 +68,11 @@ def groupmap(f:Callable[[T1, T2], T], seq:Iterable[Tuple[T1, Iterable[T2]]]) -> 
 
 
 @overload
-def map_to_pair(seq: Iterable[T], f_key:Callable[[T], T1]) -> icoll[Tuple[T1, T]]: ...
+def map_to_pair(seq: Iterable[T], f_key:Callable[[T], T1]) -> paired_icoll[T1, T]: ...
 @overload
-def map_to_pair(seq: Iterable[T], f_key:Callable[[T], T1], f_val: Callable[[T], T2]) -> icoll[Tuple[T1, T2]]: ...
+def map_to_pair(seq: Iterable[T], f_key:Callable[[T], T1], f_val: Callable[[T], T2]) -> paired_icoll[T1, T2]: ...
 
-def map_to_pair(seq: Iterable[T], f_key:Callable[[T], T1], f_val: Optional[Callable[[T], T2]] = None) -> icoll[Tuple[T1, T2]] | icoll[Tuple[T1, T]]:
+def map_to_pair(seq: Iterable[T], f_key:Callable[[T], T1], f_val: Optional[Callable[[T], T2]] = None) -> paired_icoll[T1, T2] | paired_icoll[T1, T]:
     if f_val is not None:
         return icoll(seq).map_to_pair(f_key, f_val)
     return icoll(seq).map_to_pair(f_key)
