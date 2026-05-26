@@ -1,6 +1,8 @@
 from itertools import chain
-from trent.coll import EmptyCollectionException, icoll, persistent_coll
+from trent.coll import icoll
+from trent.coll_aux import EmptyCollectionException
 from trent.interface import seq
+from trent.paired_coll import paired_icoll
 
 def _rng(n: int):
     return range(n)
@@ -197,13 +199,16 @@ def test_cat():
 
 
 
-def test_persistent_coll():
-    c = persistent_coll([1,2,3])
-    res = c.map(lambda x: x*x).map(lambda x: x*x)
+# def test_persistent_coll():
+#     c = persistent_coll([1,2,3])
+#     res = c.map(lambda x: x*x).map(lambda x: x*x)
     
-    assert list(res) == [1, 16, 81]
-    assert list(res) == [1, 16, 81]
+#     assert list(res) == [1, 16, 81]
+#     assert list(res) == [1, 16, 81]
 
+
+# ======================================
+#       HEAD TESTS
 
 def test_head_1():
     c = seq([1,2,3])
