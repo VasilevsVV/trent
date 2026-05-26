@@ -46,35 +46,3 @@ class icoll(icoll_base, Iterable[T]):
         def __pair(val: T) -> Tuple[T1, T2]:
             return (f_key(val), f_val(val))
         return paired_icoll(self.map(__pair))
-
-
-
-
-# class persistent_coll(icoll_base, Iterable[T]):
-#     def __init__(self, collection: Iterable | None = None) -> None:
-#         self.__buffer: list[T] = []
-#         self.__is_iterated: bool = False
-#         super().__init__(collection)
-    
-    
-#     def _step(self, __coll: Iterable[S]) -> icoll_base[S]:
-#         return persistent_coll(__coll)
-    
-    
-#     def _iter(self):
-#         if self.__is_iterated:
-#             raise NestedIterationExceprion
-#         self._iterator = iter(self._coll)
-#         self.__buffer = []
-#         self.__is_iterated = True
-#         return self
-    
-#     def _next(self):
-#         try:
-#             res = next(self._iterator)
-#         except StopIteration:
-#             self._coll = self.__buffer
-#             self.__is_iterated = False
-#             raise StopIteration
-#         self.__buffer.append(res)
-#         return res

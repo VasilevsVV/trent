@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 import concurrent.futures as conc
 from abc import abstractmethod
 from functools import cache, reduce
-from itertools import chain, groupby, takewhile
+from itertools import chain, groupby, takewhile, tee
 from multiprocessing import Pool
 from typing import (
     Any,
@@ -60,7 +60,8 @@ class _no_value():
 
 class icoll_base(Iterable[T]):
     """Represents a lazy sequence of type `T`"""    
-    def __init__(self, collection: Optional[Iterable[T]] = None) -> None:
+    def __init__(self, collection: Optional[Iterable[T]] = None, /, *,
+                 persisted: bool = False) -> None:
         """Create a lazy sequence `icoll`, with given Iterables collection. Or empty - if None.
 
         Args:
@@ -74,6 +75,7 @@ class icoll_base(Iterable[T]):
         else:
             self._coll = []
         self.__head: T|_no_value = _no_value()
+        self.__persisted: bool = persisted
     
 
     @property
@@ -142,15 +144,12 @@ class icoll_base(Iterable[T]):
         except EmptyCollectionException:
             return True
 
-
-    # @abstractmethod
-    # def _step(self, __coll: Iterable[S]) -> "icoll_base":
-    #     ...
     
     @classmethod
-    def _step(cls:type[C], __coll: Iterable[S]) -> icoll:
+    def _step(cls:type[C], __coll: Iterable[S], /, *,
+              persisted: bool = False) -> icoll:
         from trent.coll import icoll
-        return icoll(__coll)
+        return icoll(__coll, persisted=persisted)
     
 
     # =================================================================
@@ -629,10 +628,10 @@ class icoll_base(Iterable[T]):
     #           COLLECTING
     
     def to_list(self) -> list[T]:
-        return list(self._coll)
+        return list(self)
     
     def to_set(self) -> set[T]:
-        return set(self._coll)
+        return set(self)
     
     
     def collect(self, f: Callable[[list[T]], S] = identity) -> S:
@@ -654,28 +653,18 @@ class icoll_base(Iterable[T]):
     
     # ================================================================
     #           ITERATION
-    
-    def _iter(self):
-        if self._is_iterated:
-            raise NestedIterationExceprion
-        self._iterator = iter(self._coll)
-        self._is_iterated = True
+
+    def persist(self):
+        self.__persisted = True
         return self
     
-    def __iter__(self):
-        return self._iter()
     
-    
-    def _next(self):
-        try:
-            return next(self._iterator)
-        except StopIteration:
-            self._is_iterated = False
-            raise StopIteration
-    
-    def __next__(self) -> T:
-        return self._next()
-    
+    def __iter__(self) -> Iterator[T]:
+        if self.__persisted:
+            it1, it2 = tee(self.collection, 2)
+            self._coll = it2
+            return it1
+        return iter(self.collection)
 
     # ================================================================
     #           AUXILIARY
@@ -693,13 +682,13 @@ class icoll_base(Iterable[T]):
         Returns:
             T: First element of the collection
         """
-        __iter = iter(self._coll)
+        __iter = iter(self)
         try:
             __head = next(__iter)
         except StopIteration:
             raise EmptyCollectionException("Can't take head of empty collection")
         self._coll = chain([__head], __iter)
-        self._is_iterated = False
+        # self._is_iterated = False
         return __head
 
 
