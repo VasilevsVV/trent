@@ -37,8 +37,9 @@ if TYPE_CHECKING:
 
 class icoll(icoll_base, Iterable[T]):
     @classmethod
-    def _step(cls: type[C], __coll: Iterable[S]) -> "icoll[S]":
-        return icoll(__coll)
+    def _step(cls:type[C], __coll: Iterable[S], /, *,
+              persisted: bool = False) -> "icoll[S]":
+        return icoll(__coll, persisted=persisted)
     
 
     def map_to_pair(self, f_key: Callable[[T], T1], f_val: Callable[[T], T2] = identity) -> paired_icoll[T1, T2]:
@@ -46,3 +47,9 @@ class icoll(icoll_base, Iterable[T]):
         def __pair(val: T) -> Tuple[T1, T2]:
             return (f_key(val), f_val(val))
         return paired_icoll(self.map(__pair))
+    
+
+    def group_by(self, f:Callable[[T], T1], val_fn: Callable[[T], T2] = identity) -> paired_icoll[T1, list[T2]]:
+        from trent.paired_coll import paired_icoll
+        d = self.group_by_to_dict(f, val_fn)
+        return paired_icoll(d.items())

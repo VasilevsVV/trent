@@ -418,11 +418,6 @@ class icoll_base(Iterable[T]):
         return self.map(lambda p: f(first(p), second(p)))
     
     
-    # def map_to_pair(self, f_key: Callable[[T], T1], f_val: Callable[[T], T2] = identity) -> icoll[Tuple[T1, T2]]:
-    #     def __pair(val: T) -> Tuple[T1, T2]:
-    #         return (f_key(val), f_val(val))
-    #     return self._step(self.map(__pair))
-    
     
     def group_by_to_dict(self, f:Callable[[T], T1], val_fn: Callable[[T], T2] = identity) -> Dict[T1, list[T2]]:
         def __group(val: T) -> Tuple[T1, T2]:
@@ -538,11 +533,6 @@ class icoll_base(Iterable[T]):
 
     # ==================================================================
     #           GROUPED
-
-    def group_by(self, f:Callable[[T], T1], val_fn: Callable[[T], T2] = identity) -> icoll[tuple[T1, list[T2]]]:
-        d = self.group_by_to_dict(f, val_fn)
-        return self._step(d.items())
-    
 
     @overload
     def groupmap(self) -> icoll[tuple[Any, Any]]: ...

@@ -4,23 +4,19 @@
 from typing import Any, Callable, Dict, Generic, Iterable, TypeVar, Tuple, overload
 from trent.func import identity
 from trent.nth import first, first_, second, second_
-from trent.collection_base import C, icoll_base
+from trent.collection_base import C, R1, R2, T1, T2, icoll_base
 
 # if TYPE_CHECKING:
 #     from coll import icoll
 
-T1 = TypeVar('T1')
-T2 = TypeVar('T2')
+# T1 = TypeVar('T1')
+# T2 = TypeVar('T2')
 
-R1 = TypeVar('R1')
-R2 = TypeVar('R2')
+# R1 = TypeVar('R1')
+# R2 = TypeVar('R2')
 
 
 class paired_icoll(icoll_base[Tuple[T1, T2]], Iterable[Tuple[T1, T2]]):
-    @classmethod
-    def _step(cls: type[C], __coll):
-        return icoll_base._step(__coll)
-
     @overload
     def pairmap(self, f:Callable[[T1, T2], Tuple[R1, R2]]) -> "paired_icoll[R1, R2]": ...
     @overload
@@ -38,7 +34,6 @@ class paired_icoll(icoll_base[Tuple[T1, T2]], Iterable[Tuple[T1, T2]]):
         Returns:
             icoll[T1]: _description_
         """
-        # from coll import icoll
         def _f(_val: Tuple[T1, T2]):
             return f(first_(_val), second_(_val))
         if self.empty:
@@ -51,6 +46,16 @@ class paired_icoll(icoll_base[Tuple[T1, T2]], Iterable[Tuple[T1, T2]]):
             return paired_icoll(map(_f, self.collection))
         return icoll_base(self).map(_f)
     
+
+    def group_by(
+            self, 
+            f:Callable[[Tuple[T1, T2]], R1], 
+            val_fn: Callable[[Tuple[T1, T2]], R2] = identity
+            ) -> "paired_icoll[R1, list[R2]]":
+        d = self.group_by_to_dict(f, val_fn)
+        return paired_icoll(d.items())
+
+
     def __repr__(self) -> str:
         return f'paired_coll({self._coll})'
 
