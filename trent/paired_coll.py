@@ -64,22 +64,3 @@ class paired_icoll(icoll_base[Tuple[T1, T2]], Iterable[Tuple[T1, T2]]):
 
     def __repr__(self) -> str:
         return f'paired_coll({self._coll})'
-
-
-
-def foo(name: str, val: int):
-    return f'{name}: {val}'
-
-
-def bar(name: str, val: int):
-    return (val, name)
-
-if __name__ == '__main__':
-    c = paired_icoll([('a', 1), ('b', 2)])
-    print(c)
-    print(c.to_list())
-    print(c.pairmap(foo))
-    res = c.pairmap(bar)
-    print(res)
-    print(res.head)
-    print(res.to_list())
