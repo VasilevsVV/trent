@@ -403,6 +403,9 @@ class icoll_base(Iterable[T]):
     # ==================================================================
     #           PAIRED
     
+    @abstractmethod
+    def map_to_pair(self, f_key: Callable[[T], T1], f_val: Callable[[T], T2] = identity) -> "icoll_base": ...
+
     def pairmap(self, f:Callable[[Any, Any], T1]) -> icoll[T1]:
         """Map over paired elements (tuple, list, Iterable, etc.) with `f(arg1, arg2)` function.
         WARNING: sequence elements MUST be iterables.
@@ -533,6 +536,13 @@ class icoll_base(Iterable[T]):
 
     # ==================================================================
     #           GROUPED
+
+    @abstractmethod
+    def group_by(self, f:Callable[[T], T1], val_fn: Callable[[T], T2]) -> icoll_base:
+        ...
+        # from trent.paired_coll import paired_icoll
+        # d = self.group_by_to_dict(f, val_fn)
+        # return paired_icoll(d.items())
 
     @overload
     def groupmap(self) -> icoll[tuple[Any, Any]]: ...

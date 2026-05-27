@@ -37,14 +37,14 @@ class paired_icoll(icoll_base[Tuple[T1, T2]], Iterable[Tuple[T1, T2]]):
         def _f(_val: Tuple[T1, T2]):
             return f(first_(_val), second_(_val))
         if self.empty:
-            return icoll_base(self).map(_f) # just for consistency.
+            return self._step(self).map(_f) # just for consistency.
         _h = _f(self.head) # type: ignore
         if (
             isinstance(_h, Tuple) 
             and len(_h) == 2
         ):
             return paired_icoll(map(_f, self.collection))
-        return icoll_base(self).map(_f)
+        return self._step(self).map(_f)
     
 
     def group_by(
@@ -54,6 +54,12 @@ class paired_icoll(icoll_base[Tuple[T1, T2]], Iterable[Tuple[T1, T2]]):
             ) -> "paired_icoll[R1, list[R2]]":
         d = self.group_by_to_dict(f, val_fn)
         return paired_icoll(d.items())
+    
+
+    def map_to_pair(self, f_key: Callable[[Tuple[T1, T2]], R1], f_val: Callable[[Tuple[T1, T2]], R2] = identity) -> "paired_icoll[R1, R2]":
+        def __pair(val: Tuple[T1, T2]) -> Tuple[R1, R2]:
+            return (f_key(val), f_val(val))
+        return paired_icoll(self.map(__pair))
 
 
     def __repr__(self) -> str:
