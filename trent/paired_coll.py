@@ -1,19 +1,7 @@
-# from __future__ import annotations
-# from typing import TYPE_CHECKING
-
 from typing import Any, Callable, Dict, Generic, Iterable, TypeVar, Tuple, overload
 from trent.func import identity
 from trent.nth import first, first_, second, second_
 from trent.collection_base import C, R1, R2, T1, T2, icoll_base
-
-# if TYPE_CHECKING:
-#     from coll import icoll
-
-# T1 = TypeVar('T1')
-# T2 = TypeVar('T2')
-
-# R1 = TypeVar('R1')
-# R2 = TypeVar('R2')
 
 
 class paired_icoll(icoll_base[Tuple[T1, T2]], Iterable[Tuple[T1, T2]]):
