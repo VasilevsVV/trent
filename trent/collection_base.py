@@ -152,23 +152,6 @@ class icoll_base(Iterable[T]):
         return icoll(__coll, persisted=persisted)
     
 
-    # =================================================================
-    #           TODO
-    
-    def _init_collection(self, collection:Optional[Iterable[T]]=None) -> Iterable[T]:
-        if collection is None:
-            return []
-        elif isinstance(collection, icoll_base):
-            return collection.collection
-        elif isinstance(collection, Iterable):
-            return collection
-        else:
-            raise Exception(f'Invalid collection type: {type(collection)}. Expected Iterable!')
-    
-    
-    # def _step(self, __coll: Iterable[S]) -> icoll[S]:
-    #     return icoll(__coll)
-
     # ==================================================================
     #           MAPS
     
