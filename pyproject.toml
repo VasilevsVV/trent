@@ -17,7 +17,7 @@ maintainers = [
 description = "Convenient Sequence/Iterable/Collection processing for python. Inspired by Clojure mapping and threading macros."
 
 readme = "README.md"
-requires-python = ">=3.10.12"
+requires-python = ">=3.12"
 keywords = [
     "Sequence", "Collection", "mapping", "stream",
     "functional", "iteration", "concurrency", "group", "by"]
