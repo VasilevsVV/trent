@@ -12,7 +12,7 @@ if TYPE_CHECKING:
 
 class paired_icoll(icoll_base[Tuple[T1, T2]], Iterable[Tuple[T1, T2]]):
 
-    
+
     def pairmap(self, f:Callable[[T1, T2], R1]) -> icoll[R1]:
         """Map over paired elements (tuple, list, Iterable, etc.) with `f(arg1, arg2)` function.
         WARNING: sequence elements MUST be iterables.
@@ -27,7 +27,7 @@ class paired_icoll(icoll_base[Tuple[T1, T2]], Iterable[Tuple[T1, T2]]):
         """
         def _f(_val: Tuple[T1, T2]):
             return f(first_(_val), second_(_val))
-        return self._step(self).map(_f)
+        return self._map_step(self).map(_f)
     
 
     def pairmap_to_pair(self, f: Callable[[T1, T2], Tuple[R1, R2]]) -> paired_icoll[R1, R2]:

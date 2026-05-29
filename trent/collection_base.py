@@ -146,7 +146,7 @@ class icoll_base(Iterable[T]):
 
     
     @classmethod
-    def _step(cls:type[C], __coll: Iterable[S], /, *,
+    def _map_step(cls:type[C], __coll: Iterable[S], /, *,
               persisted: bool = False) -> icoll:
         from trent.coll import icoll
         return icoll(__coll, persisted=persisted)
@@ -164,7 +164,7 @@ class icoll_base(Iterable[T]):
         Returns:
             icoll[S]: New collection.
         """        
-        return self._step(map(f, self._coll))
+        return self._map_step(map(f, self._coll))
     
     
     def pmap(self, f: Callable[[T], S]) -> icoll[S]:
@@ -180,7 +180,7 @@ class icoll_base(Iterable[T]):
         """
         with Pool(max(int(CPU_COUNT / 4), 2)) as pool:
             __map = pool.map(f, self._coll)
-        return self._step(__map)
+        return self._map_step(__map)
     
     
     def pmap_(self, f: Callable[[T], S], threads: int = int(CPU_COUNT / 4)) -> icoll[S]:
@@ -200,7 +200,7 @@ class icoll_base(Iterable[T]):
             return self.map(f)
         with Pool(threads) as p:
             __map = p.map(f, self._coll)
-        return self._step(__map)
+        return self._map_step(__map)
     
 
     def async_map(self, f: Callable[[T], S]) -> icoll[S]:
@@ -215,7 +215,7 @@ class icoll_base(Iterable[T]):
             icoll[S]: New collection.
         """        
         __map = TRENT_THREADPOOL.map(f, self._coll)
-        return self._step(__map)
+        return self._map_step(__map)
     
     
     def async_map_(self, f: Callable[[T], S], threads: int = int(CPU_COUNT / 4)) -> icoll[S]:
@@ -235,7 +235,7 @@ class icoll_base(Iterable[T]):
             return self.map(f)
         with conc.ThreadPoolExecutor(threads, 'trent') as p:
             __map = p.map(f, self._coll)
-        return self._step(__map)
+        return self._map_step(__map)
     
     
     def mapcat(self, f: Callable[[T], Iterable[T1]]) -> icoll[T1]:
@@ -249,7 +249,7 @@ class icoll_base(Iterable[T]):
         """        
         m = map(f, self._coll)
         m = chain(* m)
-        return self._step(m)
+        return self._map_step(m)
     
     
     def cat(self) -> icoll[Any]:
@@ -309,7 +309,7 @@ class icoll_base(Iterable[T]):
         Returns:
             icoll[T]: New collection
         """        
-        return self._step(filter(f, self._coll))
+        return self._map_step(filter(f, self._coll))
     
     
     def remove(self, f: Callable[[T], Any]) -> icoll[T]:
@@ -380,7 +380,7 @@ class icoll_base(Iterable[T]):
     def take(self, n: int)-> icoll[T]:
         """Take `n` elements from sequence."""        
         assert n >= 0, 'You can only `take` >= 0 elements!'
-        return self._step(take(n, self._coll))
+        return self._map_step(take(n, self._coll))
     
     def takewhile(self, predicate:Callable[[T], bool]) -> icoll[T]:
         """Take elements while `predicate(el)`.
@@ -391,7 +391,7 @@ class icoll_base(Iterable[T]):
         Returns:
             icoll[T]: New collection
         """        
-        return self._step(takewhile(predicate, self._coll))
+        return self._map_step(takewhile(predicate, self._coll))
         
     
     # ==================================================================
@@ -444,7 +444,7 @@ class icoll_base(Iterable[T]):
         groups = groupby(self._coll, PartCounter(partition_size))
         c = map(second_, groups)
         c = map(list, c)
-        return self._step(c)
+        return self._map_step(c)
     
     
     def partition_by(self, pred: Callable[[T], Any]) -> icoll[list[T]]:
@@ -464,7 +464,7 @@ class icoll_base(Iterable[T]):
         groups = groupby(self._coll, PartByCounter(pred))
         c = map(second_, groups)
         c = map(list, c)
-        return self._step(c)
+        return self._map_step(c)
     
 
     def partmap(self, f: Callable[[Any], S]) -> icoll[List[S]]:
@@ -560,14 +560,14 @@ class icoll_base(Iterable[T]):
         except MissingValueException:
             raise EmptyCollectionException("Can't `rangify` an empty collection!")
         __f = Rangifier(__init_val)
-        return self._step(map(__f, __it))
+        return self._map_step(map(__f, __it))
     
     
     # ==================================================================
     #           TRANSFORMATIONS
     
     def concat(self, *__iterables: Iterable[T]) -> icoll[T]:
-        res = self._step(self._coll)
+        res = self._map_step(self._coll)
         for __it in __iterables:
             res.extend_(__it)
         return res
@@ -581,11 +581,11 @@ class icoll_base(Iterable[T]):
     
     
     def append(self, __val: T) -> icoll[T]:
-        return self._step(self._coll).append_(__val)
+        return self._map_step(self._coll).append_(__val)
     
     
     def cons(self, __val: T):
-        return self._step(chain([__val], self._coll))
+        return self._map_step(chain([__val], self._coll))
 
     
     def __add__(self, __iter: Iterable[T]) -> icoll[T]:

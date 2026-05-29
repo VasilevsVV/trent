@@ -37,7 +37,7 @@ if TYPE_CHECKING:
 
 class icoll(icoll_base, Iterable[T]):
     @classmethod
-    def _step(cls:type[C], __coll: Iterable[S], /, *,
+    def _map_step(cls:type[C], __coll: Iterable[S], /, *,
               persisted: bool = False) -> "icoll[S]":
         return icoll(__coll, persisted=persisted)
     
