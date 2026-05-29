@@ -152,6 +152,12 @@ class icoll_base(Iterable[T]):
         return icoll(__coll, persisted=persisted)
     
 
+    @classmethod
+    def _step(cls: type[C], __coll: Iterable[T], /, *,
+              persisted: bool = False) -> C:
+        return cls(__coll, persisted=persisted)
+    
+
     # ==================================================================
     #           MAPS
     
@@ -300,7 +306,7 @@ class icoll_base(Iterable[T]):
         return self.map(__apply)
     
     
-    def filter(self, f: Callable[[T], Any]) -> icoll[T]:
+    def filter(self, f: Callable[[T], Any]) -> Self:
         """Filter elements in sequence by predicate `f`. (remove `el` if `not f(el)y)
 
         Args:
@@ -309,10 +315,10 @@ class icoll_base(Iterable[T]):
         Returns:
             icoll[T]: New collection
         """        
-        return self._map_step(filter(f, self._coll))
+        return self._step(filter(f, self._coll))
     
     
-    def remove(self, f: Callable[[T], Any]) -> icoll[T]:
+    def remove(self, f: Callable[[T], Any]) -> Self:
         """Removed elements from sequence by predicate `f`. (remove `el` if `f(el)`)
 
         Args:
@@ -340,7 +346,7 @@ class icoll_base(Iterable[T]):
         return self.remove(isnone)
     
     
-    def unique(self) -> icoll[T]:
+    def unique(self) -> Self:
         """Remove all duplicate elements in sequence.
         WARNING: demands extra RAM.
 
@@ -350,7 +356,7 @@ class icoll_base(Iterable[T]):
         return self.distinct_by(identity)
     
 
-    def distinct(self) -> icoll[T]:
+    def distinct(self) -> Self:
         """Remove all duplicate elements in sequence.
         WARNING: demands extra RAM.
 
@@ -360,7 +366,7 @@ class icoll_base(Iterable[T]):
         return self.distinct_by(identity)
     
     
-    def distinct_by(self, f:Callable[[Any], Hashable]=identity) -> icoll[T]:
+    def distinct_by(self, f:Callable[[Any], Hashable]=identity) -> Self:
         """Remove duplicate elements by predicate `f`.
         (Remove `el` of `f(el)` is already present)
         WARNING: demands extra RAM.
@@ -377,12 +383,12 @@ class icoll_base(Iterable[T]):
     # =================================================================
     #           TAKE
     
-    def take(self, n: int)-> icoll[T]:
+    def take(self, n: int)-> Self:
         """Take `n` elements from sequence."""        
         assert n >= 0, 'You can only `take` >= 0 elements!'
-        return self._map_step(take(n, self._coll))
+        return self._step(take(n, self._coll))
     
-    def takewhile(self, predicate:Callable[[T], bool]) -> icoll[T]:
+    def takewhile(self, predicate:Callable[[T], bool]) -> Self:
         """Take elements while `predicate(el)`.
 
         Args:
@@ -391,7 +397,7 @@ class icoll_base(Iterable[T]):
         Returns:
             icoll[T]: New collection
         """        
-        return self._map_step(takewhile(predicate, self._coll))
+        return self._step(takewhile(predicate, self._coll))
         
     
     # ==================================================================
@@ -407,10 +413,10 @@ class icoll_base(Iterable[T]):
         NOTE: If elements contain less than 2 values - `None` will be passed to `f` instead.
 
         Args:
-            f (Callable[[Any, Any], T1]): _description_
+            f (Callable[[Any, Any], T1]): Function, that accepts 2 arguments
 
         Returns:
-            icoll[T1]: _description_
+            icoll[T1]: New collection
         """        
         return self.map(lambda p: f(first(p), second(p)))
     
@@ -447,7 +453,7 @@ class icoll_base(Iterable[T]):
         return self._map_step(c)
     
     
-    def partition_by(self, pred: Callable[[T], Any]) -> icoll[list[T]]:
+    def partition_by(self, pred: Callable[[T], bool]) -> icoll[list[T]]:
         """Partition sequence int ochunks devided by predicate `pred`.
         Where every time `pred(value)` return True - a new partition will be created.
         ```
@@ -566,29 +572,29 @@ class icoll_base(Iterable[T]):
     # ==================================================================
     #           TRANSFORMATIONS
     
-    def concat(self, *__iterables: Iterable[T]) -> icoll[T]:
-        res = self._map_step(self._coll)
+    def concat(self, *__iterables: Iterable[T]) -> Self:
+        res = self._step(self._coll)
         for __it in __iterables:
             res.extend_(__it)
         return res
     
-    def extend(self, __iterable: Iterable[T]) -> icoll[T]:
+    def extend(self, __iterable: Iterable[T]) -> Self:
         return self.concat(__iterable)
     
     
-    def conj(self, *vals: T):
+    def conj(self, *vals: T) -> Self:
         return self.concat(vals)
     
     
-    def append(self, __val: T) -> icoll[T]:
-        return self._map_step(self._coll).append_(__val)
+    def append(self, __val: T) -> Self:
+        return self._step(self._coll).append_(__val)
     
     
-    def cons(self, __val: T):
-        return self._map_step(chain([__val], self._coll))
+    def cons(self, __val: T) -> Self:
+        return self._step(chain([__val], self._coll))
 
     
-    def __add__(self, __iter: Iterable[T]) -> icoll[T]:
+    def __add__(self, __iter: Iterable[T]) -> Self:
         return self.concat(__iter)
     
     # ===============================================================
@@ -649,7 +655,7 @@ class icoll_base(Iterable[T]):
     # ================================================================
     #           ITERATION
 
-    def persist(self):
+    def persist(self) -> Self:
         self.__persisted = True
         return self
     
