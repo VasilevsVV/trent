@@ -359,17 +359,28 @@ class icoll_base(Iterable[T]):
     
     def unique(self) -> icoll[T]:
         """Remove all duplicate elements in sequence.
-        WARN: demands extra RAM.
+        WARNING: demands extra RAM.
 
         Returns:
             icoll[T]: New collection of unique elements.
         """        
         return self.distinct_by(identity)
     
+
+    def distinct(self) -> icoll[T]:
+        """Remove all duplicate elements in sequence.
+        WARNING: demands extra RAM.
+
+        Returns:
+            icoll[T]: New collection of unique elements.
+        """
+        return self.distinct_by(identity)
+    
     
     def distinct_by(self, f:Callable[[Any], Hashable]=identity) -> icoll[T]:
         """Remove duplicate elements by predicate `f`.
         (Remove `el` of `f(el)` is already present)
+        WARNING: demands extra RAM.
 
         Args:
             f (Callable[[Any], Hashable], optional): Predicate function. Defaults to identity.
