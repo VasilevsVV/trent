@@ -199,12 +199,12 @@ def test_cat():
 
 
 
-# def test_persistent_coll():
-#     c = persistent_coll([1,2,3])
-#     res = c.map(lambda x: x*x).map(lambda x: x*x)
+def test_persistent_coll():
+    c = seq([1,2,3])
+    res = c.map(lambda x: x*x).map(lambda x: x*x).persist()
     
-#     assert list(res) == [1, 16, 81]
-#     assert list(res) == [1, 16, 81]
+    assert list(res) == [1, 16, 81]
+    assert list(res) == [1, 16, 81]
 
 
 # ======================================
