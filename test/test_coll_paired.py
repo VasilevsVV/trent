@@ -39,8 +39,8 @@ def test_group_by_1():
     def __mod10(val: int):
         return val // 10
     c = icoll(range(30))
-    res = c.group_by_to_dict(__mod10)
-    assert res == {
+    res = c.group_by(__mod10)
+    assert dict(res) == {
                     0: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
                     1: [10, 11, 12, 13, 14, 15, 16, 17, 18, 19],
                     2: [20, 21, 22, 23, 24, 25, 26, 27, 28, 29]
