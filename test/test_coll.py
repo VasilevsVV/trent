@@ -229,3 +229,29 @@ def test_head_3():
     except EmptyCollectionException as e:
         err = e
     assert isinstance(err, EmptyCollectionException)
+
+
+# ==============================================
+#       "EMPTY" TEST
+
+
+def test_empty_1():
+    c = seq([])
+    assert c.empty is True
+
+
+def test_empty_2():
+    c = seq([1,2,3])
+    assert c.empty is False
+    assert c.to_list() == [1,2,3]
+
+
+def test_empty_3():
+    c = seq(range(0))
+    assert c.empty is True
+
+
+def test_empty_4():
+    c = seq(range(3))
+    assert c.empty is False
+    assert c.to_list() == [0,1,2]
