@@ -1,6 +1,6 @@
 from __future__ import annotations
+from typing import TYPE_CHECKING, Self
 
-from typing import TYPE_CHECKING
 import concurrent.futures as conc
 from abc import abstractmethod
 from functools import cache, reduce
@@ -580,7 +580,7 @@ class icoll_base(Iterable[T]):
         return self.concat(vals)
     
     
-    def append(self, __val: T) -> icoll_base[T]:
+    def append(self, __val: T) -> icoll[T]:
         return self._step(self._coll).append_(__val)
     
     
@@ -594,7 +594,7 @@ class icoll_base(Iterable[T]):
     # ===============================================================
     #   IN_PLACE TRANSFORMATIONS
     
-    def extend_(self, __iterable: Iterable[T]) -> icoll_base[T]:
+    def extend_(self, __iterable: Iterable[T]) -> Self:
         """In-place extend. Addes `__iterable` to the end of `coll`.
 
         Args:
@@ -609,13 +609,14 @@ class icoll_base(Iterable[T]):
         self._coll = chain(self._coll, __iterable)
         return self
     
-    def append_(self, __val: T) -> icoll_base[T]:
+    def append_(self, __val: T) -> Self:
         self.extend_([__val])
         return self
     
     
-    def cons_(self, __val: T):
+    def cons_(self, __val: T) -> Self:
         self._coll = chain([__val], self._coll)
+        return self
     
     
     # =================================================================
