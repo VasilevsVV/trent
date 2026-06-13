@@ -47,6 +47,10 @@ class PairedCollection(CollectionBase[Tuple[T1, T2]], Iterable[Tuple[T1, T2]]):
         def __pair(val: Tuple[T1, T2]) -> Tuple[R1, R2]:
             return (f_key(val), f_val(val))
         return PairedCollection(self.map(__pair))
+    
+
+    def to_dict(self) -> dict[T1, T2]:
+        return dict(self)
 
 
     def __repr__(self) -> str:
