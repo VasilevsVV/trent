@@ -1,8 +1,8 @@
 from itertools import chain
-from trent.coll import icoll
+from trent.coll import Collection
 from trent.coll_aux import EmptyCollectionException
 from trent.interface import seq
-from trent.paired_coll import paired_icoll
+from trent.paired_coll import PairedCollection
 
 def _rng(n: int):
     return range(n)
@@ -22,26 +22,26 @@ def _fact(n: int):
 # ========================================================
 
 def test_mapping_1():
-    c = icoll([1, 2, 3, 4])
+    c = Collection([1, 2, 3, 4])
     res = c.map(lambda x: x*x)
     
     assert list(res) == [1, 4, 9, 16]
 
 
 def test_mapping_2():
-    c = icoll([1, 2, 3])
+    c = Collection([1, 2, 3])
     res = list(c.map(str))
     assert isinstance(res[0], str)
     assert res == ['1', '2', '3']
 
 def test_async_map_1():
-    c = icoll(range(10))
+    c = Collection(range(10))
     res = c.async_map(_fact)
     assert list(res) == [_fact(i) for i in range(10)]
 
 
 def test_async_map_2():
-    c = icoll(range(100))
+    c = Collection(range(100))
     res = c.async_map_(_fact, 2)
     assert list(res) == [_fact(i) for i in range(100)]
 
@@ -49,7 +49,7 @@ def test_async_map_2():
 def test_filter_1():
     def _isodd(n: int):
         return n % 2
-    c = icoll(range(10))
+    c = Collection(range(10))
     res = list(c.filter(_isodd))
     assert res == [1, 3, 5, 7, 9]
 
@@ -57,7 +57,7 @@ def test_filter_1():
 def test_filter_2():
     def _iseven(n: int):
         return n % 2 == 0
-    c = icoll(range(10))
+    c = Collection(range(10))
     res = list(c.filter(_iseven))
     assert res == [0, 2, 4, 6, 8]
 
@@ -65,19 +65,19 @@ def test_filter_2():
 def test_remove():
     def _isodd(n: int):
         return n % 2
-    c = icoll(range(10))
+    c = Collection(range(10))
     res = list(c.remove(_isodd))
     assert res == [0, 2, 4, 6, 8]
 
 
 def test_remove_none():
-    c = icoll([1,2,3,4,None,6,None,8])
+    c = Collection([1,2,3,4,None,6,None,8])
     res = list(c.remove_none())
     assert res == [1,2,3,4,6,8]
 
 
 def test_remove_none_2():
-    c = icoll([1,2,3,4,None,6,None,8, '10', '12'])
+    c = Collection([1,2,3,4,None,6,None,8, '10', '12'])
     def __f(n: int|str) -> int:
         return int(n)
     res = c.remove_none(int, str)
@@ -86,7 +86,7 @@ def test_remove_none_2():
 
 
 def test_apply_1():
-    c = icoll([1,2,3,4,6,8])
+    c = Collection([1,2,3,4,6,8])
     _l = []
     def _f(x: int) -> None:
         _l.append(x)
@@ -96,25 +96,25 @@ def test_apply_1():
 
 
 def test_mapcat():
-    c = icoll([2, 3, 4])
+    c = Collection([2, 3, 4])
     res = c.mapcat(_rng)
     assert list(res) == [0,1, 0,1,2, 0,1,2,3]
 
 
 def test_mapcat_2():
-    c = icoll([])
+    c = Collection([])
     res = c.mapcat(_rng)
     assert list(res) == []
 
 
 def test_catmap():
-    c = icoll([[1, 2], [3, 4, 5]])
+    c = Collection([[1, 2], [3, 4, 5]])
     res = c.catmap(_double)
     assert list(res) == [1, 4, 9, 16, 25]
 
 
 def test_unique():
-    c = icoll([1, 2, 3, 2, 1, 6, 10, 10, 1])
+    c = Collection([1, 2, 3, 2, 1, 6, 10, 10, 1])
     res = c.unique()
     assert list(res) == [1, 2, 3, 6, 10]
 
@@ -124,76 +124,76 @@ def test_distinct_by():
         if len(s) < 3:
             return s
         return s[0:2]
-    c = icoll(['football', 'foobar', 'foony', 'barber', 'barbaz'])
+    c = Collection(['football', 'foobar', 'foony', 'barber', 'barbaz'])
     res = c.distinct_by(_f)
     assert list(res) == ['football', 'barber']
 
 
 
 def test_take():
-    c = icoll(range(10000))
+    c = Collection(range(10000))
     res = c.take(5)
     assert list(res) == [0, 1, 2, 3, 4]
 
 
 def test_takewhile():
-    c = icoll(range(10000))
+    c = Collection(range(10000))
     res = c.takewhile(lambda n: n < 6)
     assert list(res) == [0, 1, 2, 3, 4, 5]
 
 
 def test_partition_1():
-    c = icoll(range(6))
+    c = Collection(range(6))
     res = c.partition(2).map(tuple)
     assert list(res) == [(0, 1), (2, 3), (4, 5)]
 
 
 def test_partition_2():
-    c = icoll(range(5))
+    c = Collection(range(5))
     res = c.partition(3).map(list)
     assert list(res) == [[0, 1, 2], [3, 4]]
 
 
 def test_partition_3():
-    c = icoll(range(5))
+    c = Collection(range(5))
     res = c.partition(2).cat()
     assert list(res) == [0, 1, 2, 3, 4]
 
 
 def test_partition_by_1():
-    c = icoll(range(6))
+    c = Collection(range(6))
     res = c.partition_by(lambda n: n % 2 == 0)
     assert list(res) == [[0, 1], [2, 3], [4, 5]]
 
 
 def test_partmap_1():
-    c = icoll([range(100), range(100, 200)])
+    c = Collection([range(100), range(100, 200)])
     res = c.partmap(lambda n: n * 10)
     __res_val = [list(range(0, 1000, 10)), list(range(1000, 2000, 10))]
     assert list(res) == __res_val
 
 
 def test_async_partmap_1():
-    c = icoll([range(100), range(100, 200)])
+    c = Collection([range(100), range(100, 200)])
     res = c.async_partmap(lambda n: n * 10)
     __res_val = [list(range(0, 1000, 10)), list(range(1000, 2000, 10))]
     assert list(res) == __res_val
 
 
 def test_async_partmap_2():
-    c = icoll([range(100), range(100, 200)])
+    c = Collection([range(100), range(100, 200)])
     res = c.async_partmap_(lambda n: n * 10, 4)
     __res_val = [list(range(0, 1000, 10)), list(range(1000, 2000, 10))]
     assert list(res) == __res_val
 
 def test_async_partmap_3():
-    c = icoll([range(100), range(100, 200)])
+    c = Collection([range(100), range(100, 200)])
     res = c.async_partmap(lambda n: n * 10, threads=4)
     __res_val = [list(range(0, 1000, 10)), list(range(1000, 2000, 10))]
     assert list(res) == __res_val
     
 def test_cat():
-    c = icoll([[1, 2, 3], [4, 5]])
+    c = Collection([[1, 2, 3], [4, 5]])
     res = c.cat()
     assert list(res) == [1, 2, 3, 4, 5]
 

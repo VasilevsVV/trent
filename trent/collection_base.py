@@ -35,13 +35,13 @@ from trent.func import identity, isnone
 from trent.nth import MissingValueException, first, first_, second, second_
 
 if TYPE_CHECKING:
-    from coll import icoll
+    from coll import Collection
 
 # ---
 
 
 
-C = TypeVar('C', bound="icoll_base")
+C = TypeVar('C', bound="CollectionBase")
 
 T = TypeVar('T')
 T1 = TypeVar('T1')
@@ -58,7 +58,7 @@ class _no_value():
         pass
 
 
-class icoll_base(Iterable[T]):
+class CollectionBase(Iterable[T]):
     """Represents a lazy sequence of type `T`"""    
     def __init__(self, collection: Optional[Iterable[T]] = None, /, *,
                  persisted: bool = False) -> None:
@@ -147,9 +147,9 @@ class icoll_base(Iterable[T]):
     
     @classmethod
     def _map_step(cls:type[C], __coll: Iterable[S], /, *,
-              persisted: bool = False) -> icoll:
-        from trent.coll import icoll
-        return icoll(__coll, persisted=persisted)
+              persisted: bool = False) -> Collection:
+        from trent.coll import Collection
+        return Collection(__coll, persisted=persisted)
     
 
     @classmethod
@@ -161,7 +161,7 @@ class icoll_base(Iterable[T]):
     # ==================================================================
     #           MAPS
     
-    def map(self, f: Callable[[T], S]) -> icoll[S]:
+    def map(self, f: Callable[[T], S]) -> Collection[S]:
         """Maps over the elements of collection with function `f(el: T) -> S`, and retrun a new collection icoll[S].
 
         Args:
@@ -173,7 +173,7 @@ class icoll_base(Iterable[T]):
         return self._map_step(map(f, self._coll))
     
     
-    def pmap(self, f: Callable[[T], S]) -> icoll[S]:
+    def pmap(self, f: Callable[[T], S]) -> Collection[S]:
         """Performes `map` in parallel. 
         Uses "multiprocessing" lib.
         Executes tasks in separate processes. Use for CPU bound tasks
@@ -189,7 +189,7 @@ class icoll_base(Iterable[T]):
         return self._map_step(__map)
     
     
-    def pmap_(self, f: Callable[[T], S], threads: int = int(CPU_COUNT / 4)) -> icoll[S]:
+    def pmap_(self, f: Callable[[T], S], threads: int = int(CPU_COUNT / 4)) -> Collection[S]:
         """Performed `map` in parallel. And a number of threads to use can be defined.
         Uses "multiprocessing" lib.
         Executes tasks in separate processes. Use for CPU bound tasks
@@ -209,7 +209,7 @@ class icoll_base(Iterable[T]):
         return self._map_step(__map)
     
 
-    def async_map(self, f: Callable[[T], S]) -> icoll[S]:
+    def async_map(self, f: Callable[[T], S]) -> Collection[S]:
         """Performes `map` asyncronously.
         Uses "concur" lib.
         Executes tasks in current process. Use for Disk/Network bound tasks
@@ -224,7 +224,7 @@ class icoll_base(Iterable[T]):
         return self._map_step(__map)
     
     
-    def async_map_(self, f: Callable[[T], S], threads: int = int(CPU_COUNT / 4)) -> icoll[S]:
+    def async_map_(self, f: Callable[[T], S], threads: int = int(CPU_COUNT / 4)) -> Collection[S]:
         """Performed `map` asyncronously. And a number of threads to use can be defined.
         Uses "concur" lib.
         Executes tasks in current process. Use for Disk/Network bound tasks
@@ -244,7 +244,7 @@ class icoll_base(Iterable[T]):
         return self._map_step(__map)
     
     
-    def mapcat(self, f: Callable[[T], Iterable[T1]]) -> icoll[T1]:
+    def mapcat(self, f: Callable[[T], Iterable[T1]]) -> Collection[T1]:
         """Maps elements with function `f(el) -> Iterable`, and concatenates resulting collectinns of iterables.
 
         Args:
@@ -258,7 +258,7 @@ class icoll_base(Iterable[T]):
         return self._map_step(m)
     
     
-    def cat(self) -> icoll[Any]:
+    def cat(self) -> Collection[Any]:
         """Concatenates sequence of Iterables into one sequence.
         ```
         c = seq([[1, 2], [3, 4]]).cat()
@@ -271,7 +271,7 @@ class icoll_base(Iterable[T]):
         return self.mapcat(identity) # type: ignore
     
     
-    def catmap(self, f: Callable[[Any], T1]) -> icoll[T1]:
+    def catmap(self, f: Callable[[Any], T1]) -> Collection[T1]:
         """Concatenate sequence (as in cat()), and than - performe a `map` over elements with funcion `f`
 
         Args:
@@ -283,7 +283,7 @@ class icoll_base(Iterable[T]):
         return self.cat().map(f)
     
     
-    def apply(self, f:Callable[[T], Optional[Any]]) -> icoll[T]:
+    def apply(self, f:Callable[[T], Optional[Any]]) -> Collection[T]:
         """Applyes function  `f` to all elements, but not maps elements to new values. Resulting coll witll have the same elements.
         Usefull for:
             - Updating dict elements in icoll[dict]
@@ -332,9 +332,9 @@ class icoll_base(Iterable[T]):
     
     
     @overload
-    def remove_none(self) -> icoll[Any]: ...
+    def remove_none(self) -> Collection[Any]: ...
     @overload
-    def remove_none(self, * _types: type[S]) -> icoll[S]: ...
+    def remove_none(self, * _types: type[S]) -> Collection[S]: ...
     
     def remove_none(self, * _types): # type: ignore
         """WARNING: removes typehinting for given `coll`. Returns icoll[Any].
@@ -404,9 +404,9 @@ class icoll_base(Iterable[T]):
     #           PAIRED
     
     @abstractmethod
-    def map_to_pair(self, f_key: Callable[[T], T1], f_val: Callable[[T], T2] = identity) -> "icoll_base": ...
+    def map_to_pair(self, f_key: Callable[[T], T1], f_val: Callable[[T], T2] = identity) -> "CollectionBase": ...
 
-    def pairmap(self, f:Callable[[Any, Any], T1]) -> icoll[T1]:
+    def pairmap(self, f:Callable[[Any, Any], T1]) -> Collection[T1]:
         """Map over paired elements (tuple, list, Iterable, etc.) with `f(arg1, arg2)` function.
         WARNING: sequence elements MUST be iterables.
         NOTE: Iterable elements can contain more than 2 elements, but extra values will be lost.
@@ -438,7 +438,7 @@ class icoll_base(Iterable[T]):
     # ==================================================================
     #           PARTITIONED
 
-    def partition(self, partition_size: int, /) -> icoll[list[T]]:
+    def partition(self, partition_size: int, /) -> Collection[list[T]]:
         """Partition sequence into chunks of size `partition_size`.
 
         Args:
@@ -453,7 +453,7 @@ class icoll_base(Iterable[T]):
         return self._map_step(c)
     
     
-    def partition_by(self, pred: Callable[[T], bool]) -> icoll[list[T]]:
+    def partition_by(self, pred: Callable[[T], bool]) -> Collection[list[T]]:
         """Partition sequence int ochunks devided by predicate `pred`.
         Where every time `pred(value)` return True - a new partition will be created.
         ```
@@ -473,7 +473,7 @@ class icoll_base(Iterable[T]):
         return self._map_step(c)
     
 
-    def partmap(self, f: Callable[[Any], S]) -> icoll[List[S]]:
+    def partmap(self, f: Callable[[Any], S]) -> Collection[List[S]]:
         """Map over elements in partitioned sequence (Sequence of Iterable[T]).
         For convenience, if you want to map elements, without concatenating partitions.
         WARNING: sequence elements MUST be iterables.
@@ -491,7 +491,7 @@ class icoll_base(Iterable[T]):
     
 
     def async_partmap(self, f: Callable[[Any], S], /, *,
-                      threads: Optional[int] = None) -> icoll[List[S]]:
+                      threads: Optional[int] = None) -> Collection[List[S]]:
         """Asyncronous Map over elements in partitioned sequence (Sequence of Iterable[T]).
         For convenience, if you want to map elements, without concatenating partitions.
         WARNING: sequence elements MUST be iterables.
@@ -510,7 +510,7 @@ class icoll_base(Iterable[T]):
         return self.map(__f).map(list) # type: ignore
     
 
-    def async_partmap_(self, f: Callable[[Any], S], threads: Optional[int] = None, /) -> icoll[List[S]]:
+    def async_partmap_(self, f: Callable[[Any], S], threads: Optional[int] = None, /) -> Collection[List[S]]:
         """Asyncronous Map over elements in partitioned sequence (Sequence of Iterable[T]).
         For convenience, if you want to map elements, without concatenating partitions.
         WARNING: sequence elements MUST be iterables.
@@ -538,16 +538,16 @@ class icoll_base(Iterable[T]):
     #           GROUPED
 
     @abstractmethod
-    def group_by(self, f:Callable[[T], T1], val_fn: Callable[[T], T2]) -> icoll_base:
+    def group_by(self, f:Callable[[T], T1], val_fn: Callable[[T], T2]) -> CollectionBase:
         ...
         # from trent.paired_coll import paired_icoll
         # d = self.group_by_to_dict(f, val_fn)
         # return paired_icoll(d.items())
 
     @overload
-    def groupmap(self) -> icoll[tuple[Any, Any]]: ...
+    def groupmap(self) -> Collection[tuple[Any, Any]]: ...
     @overload
-    def groupmap(self, f:Callable[[Any, Any], S]) -> icoll[S]: ...
+    def groupmap(self, f:Callable[[Any, Any], S]) -> Collection[S]: ...
     
     def groupmap(self, f:Optional[Callable[[Any, Any], S]]=None):
         def __unpack_group(group):
@@ -559,7 +559,7 @@ class icoll_base(Iterable[T]):
         return pairs
     
     
-    def rangify(self) -> icoll[Tuple[T, T]]:
+    def rangify(self) -> Collection[Tuple[T, T]]:
         __it = iter(self._coll)
         try:
             __init_val = first_(__it)
@@ -609,7 +609,7 @@ class icoll_base(Iterable[T]):
         Returns:
             coll[T]: Self
         """        
-        if isinstance(__iterable, icoll_base):
+        if isinstance(__iterable, CollectionBase):
             self._coll = chain(self._coll, __iterable.collection)
             return self
         self._coll = chain(self._coll, __iterable)

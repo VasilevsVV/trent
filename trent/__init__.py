@@ -1,5 +1,6 @@
-from .coll import icoll
-from .nth import first, first_, second, second_
+from .coll import Collection
+from .paired_coll import PairedCollection
+from .nth import first, first_, second, second_, third
 from .func import gtr, gtr_
 from .interface import (
     cat,
@@ -19,7 +20,8 @@ from .interface import (
 )
 
 __all__ = [
-    'icoll',
+    'Collection',
+    'PairedCollection',
     
     'seq',
     'coll',
@@ -40,6 +42,7 @@ __all__ = [
     'first_',
     'second',
     'second_',
+    'third',
     
     'gtr',
     'gtr_'

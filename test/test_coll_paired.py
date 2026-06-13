@@ -1,5 +1,5 @@
 from typing import Optional, Sequence
-from trent.coll import icoll
+from trent.coll import Collection
 
 
 def first(seq: Sequence):
@@ -12,7 +12,7 @@ def second(seq: Sequence):
 def test_group_by_to_dict_1():
     def __mod10(val: int):
         return val // 10
-    c = icoll(range(30))
+    c = Collection(range(30))
     res = c.group_by_to_dict(__mod10)
     assert res == {
                     0: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
@@ -22,14 +22,14 @@ def test_group_by_to_dict_1():
 
 
 def test_group_by_to_dict_2():
-    c = icoll([(1, 10), (1, 15), (2, 21), (2, 27)])
+    c = Collection([(1, 10), (1, 15), (2, 21), (2, 27)])
     res = c.group_by_to_dict(first)
     assert res == {1: [(1, 10), (1, 15)],
                    2: [(2, 21), (2, 27)]}
 
 
 def test_group_by_to_dict_3():
-    c = icoll([(1, 10), (1, 15), (2, 21), (2, 27)])
+    c = Collection([(1, 10), (1, 15), (2, 21), (2, 27)])
     res = c.group_by_to_dict(first, second)
     assert res == {1: [10, 15],
                    2: [21, 27]}
@@ -38,7 +38,7 @@ def test_group_by_to_dict_3():
 def test_group_by_1():
     def __mod10(val: int):
         return val // 10
-    c = icoll(range(30))
+    c = Collection(range(30))
     res = c.group_by(__mod10)
     assert dict(res) == {
                     0: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
@@ -48,7 +48,7 @@ def test_group_by_1():
 
 
 def test_rangify():
-    c = icoll(range(10))
+    c = Collection(range(10))
     res = c.rangify()
     assert list(res) == [(0, 1), (1, 2), (2, 3), (3, 4), (4, 5), (5, 6), (6, 7), (7, 8), (8, 9)]
 
@@ -57,7 +57,7 @@ def test_rangify():
 def test_pairmap_1():
     def __add(n1: int, n2:int):
         return n1 + n2
-    c = icoll([(1,2), (3,4), (5,6)])
+    c = Collection([(1,2), (3,4), (5,6)])
     res = c.pairmap(__add)
     assert list(res) == [3, 7, 11]
 
@@ -70,7 +70,7 @@ def test_pairmap_2():
         for i in lst:
             sum += i
         return f'{id}->{sum}'
-    c = icoll(range(30))
+    c = Collection(range(30))
     res = c.group_by(__mod10).pairmap(__add)
     assert res.to_list() == ['0->45', '1->145', '2->245']
 
@@ -80,7 +80,7 @@ def test_pairmap_3():
         if n2 is None:
             return n1
         return n1 + n2
-    c = icoll([(1,2), (3, ), (5,6)])
+    c = Collection([(1,2), (3, ), (5,6)])
     res = c.pairmap(__add)
     assert list(res) == [3, 3, 11]
 
@@ -90,7 +90,7 @@ def test_groupmap():
         return val % 3
     def __add(id: int, val: int):
         return f'{id}:{val}'
-    c = icoll(range(10))
+    c = Collection(range(10))
     res = c.group_by(__mod3).groupmap(__add)
     assert list(res) == ['0:0', '0:3', '0:6', '0:9', '1:1', '1:4', '1:7', '2:2', '2:5', '2:8']
     

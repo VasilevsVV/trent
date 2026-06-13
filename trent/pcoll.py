@@ -1,10 +1,10 @@
 from typing import Iterable, Optional, TypeVar
-from trent.coll import icoll
+from trent.coll import Collection
 from trent.coll_aux import NestedIterationExceprion
 
 T = TypeVar('T')
 
-class pcoll(icoll, Iterable[T]):
+class pcoll(Collection, Iterable[T]):
     def __init__(self, collection: Optional[Iterable[T]] = None) -> None:
         self.__buffer: list[T]
         super().__init__(collection)
