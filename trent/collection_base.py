@@ -146,7 +146,7 @@ class CollectionBase(Iterable[T]):
 
     
     @classmethod
-    def _map_step(cls:type[C], __coll: Iterable[S], /, *,
+    def _mapping_step(cls:type[C], __coll: Iterable[S], /, *,
               persisted: bool = False) -> Collection:
         from trent.coll import Collection
         return Collection(__coll, persisted=persisted)
@@ -170,7 +170,7 @@ class CollectionBase(Iterable[T]):
         Returns:
             icoll[S]: New collection.
         """        
-        return self._map_step(map(f, self._coll))
+        return self._mapping_step(map(f, self._coll))
     
     
     def pmap(self, f: Callable[[T], S]) -> Collection[S]:
@@ -186,7 +186,7 @@ class CollectionBase(Iterable[T]):
         """
         with Pool(max(int(CPU_COUNT / 4), 2)) as pool:
             __map = pool.map(f, self._coll)
-        return self._map_step(__map)
+        return self._mapping_step(__map)
     
     
     def pmap_(self, f: Callable[[T], S], threads: int = int(CPU_COUNT / 4)) -> Collection[S]:
@@ -206,7 +206,7 @@ class CollectionBase(Iterable[T]):
             return self.map(f)
         with Pool(threads) as p:
             __map = p.map(f, self._coll)
-        return self._map_step(__map)
+        return self._mapping_step(__map)
     
 
     def async_map(self, f: Callable[[T], S]) -> Collection[S]:
@@ -221,7 +221,7 @@ class CollectionBase(Iterable[T]):
             icoll[S]: New collection.
         """        
         __map = TRENT_THREADPOOL.map(f, self._coll)
-        return self._map_step(__map)
+        return self._mapping_step(__map)
     
     
     def async_map_(self, f: Callable[[T], S], threads: int = int(CPU_COUNT / 4)) -> Collection[S]:
@@ -241,7 +241,7 @@ class CollectionBase(Iterable[T]):
             return self.map(f)
         with conc.ThreadPoolExecutor(threads, 'trent') as p:
             __map = p.map(f, self._coll)
-        return self._map_step(__map)
+        return self._mapping_step(__map)
     
     
     def mapcat(self, f: Callable[[T], Iterable[T1]]) -> Collection[T1]:
@@ -255,7 +255,7 @@ class CollectionBase(Iterable[T]):
         """        
         m = map(f, self._coll)
         m = chain(* m)
-        return self._map_step(m)
+        return self._mapping_step(m)
     
     
     def cat(self) -> Collection[Any]:
@@ -450,7 +450,7 @@ class CollectionBase(Iterable[T]):
         groups = groupby(self._coll, PartCounter(partition_size))
         c = map(second_, groups)
         c = map(list, c)
-        return self._map_step(c)
+        return self._mapping_step(c)
     
     
     def partition_by(self, pred: Callable[[T], bool]) -> Collection[list[T]]:
@@ -470,7 +470,7 @@ class CollectionBase(Iterable[T]):
         groups = groupby(self._coll, PartByCounter(pred))
         c = map(second_, groups)
         c = map(list, c)
-        return self._map_step(c)
+        return self._mapping_step(c)
     
 
     def partmap(self, f: Callable[[Any], S]) -> Collection[List[S]]:
@@ -566,7 +566,7 @@ class CollectionBase(Iterable[T]):
         except MissingValueException:
             raise EmptyCollectionException("Can't `rangify` an empty collection!")
         __f = Rangifier(__init_val)
-        return self._map_step(map(__f, __it))
+        return self._mapping_step(map(__f, __it))
     
     
     # ==================================================================

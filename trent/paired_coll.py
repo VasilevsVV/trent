@@ -27,7 +27,7 @@ class PairedCollection(CollectionBase[Tuple[T1, T2]], Iterable[Tuple[T1, T2]]):
         """
         def _f(_val: Tuple[T1, T2]):
             return f(first_(_val), second_(_val))
-        return self._map_step(self).map(_f)
+        return self._mapping_step(self).map(_f)
     
 
     def pairmap_to_pair(self, f: Callable[[T1, T2], Tuple[R1, R2]]) -> PairedCollection[R1, R2]:
