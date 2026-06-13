@@ -19,10 +19,17 @@ def seq(seq: Iterable[Tuple[T1, T2]]) -> Collection[Tuple[T1, T2]]: ...
 @overload
 def seq(seq: Iterable[T]) -> Collection[T]: ...
 
-def seq(seq: Optional[Iterable] = None) -> Collection:
+def seq(seq: Optional[Iterable] = None):
     if isinstance(seq, Dict):
         return Collection(seq.items())
     return Collection(seq)
+
+
+def paired_seq(seq: Optional[Iterable[Tuple[T1, T2]]| Dict[T1, T2]]) -> PairedCollection[T1, T2]:
+    if isinstance(seq, Dict):
+        return PairedCollection(seq.items()) # type: ignore
+    return PairedCollection(seq)
+
 
 coll = seq
 icoll = seq
