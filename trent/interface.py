@@ -89,7 +89,3 @@ def map_to_pair(seq: Iterable[T], f_key:Callable[[T], T1], f_val: Optional[Calla
 
 def rangify(seq: Iterable[T]) -> Collection[Tuple[T, T]]:
     return Collection(seq).rangify()
-
-
-if __name__ == '__main__':
-    pass

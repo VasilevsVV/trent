@@ -558,16 +558,6 @@ class CollectionBase(Iterable[T]):
         return pairs
     
     
-    def rangify(self) -> Collection[Tuple[T, T]]:
-        __it = iter(self._coll)
-        try:
-            __init_val = first_(__it)
-        except MissingValueException:
-            raise EmptyCollectionException("Can't `rangify` an empty collection!")
-        __f = Rangifier(__init_val)
-        return self._mapping_step(map(__f, __it))
-    
-    
     # ==================================================================
     #           TRANSFORMATIONS
     
@@ -690,5 +680,12 @@ class CollectionBase(Iterable[T]):
         self._coll = chain([__head], __iter)
         # self._is_iterated = False
         return __head
+    
 
-
+    def tail(self) -> Self:
+        __iter = iter(self)
+        try:
+            __head = next(__iter)
+        except StopIteration:
+            raise EmptyCollectionException("Can't take head of empty collection")
+        return self._step(__iter)

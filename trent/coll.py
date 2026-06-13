@@ -8,8 +8,11 @@ from typing import (
 )
 
 
+from trent.coll_aux import Rangifier
 from trent.collection_base import T, T1, T2, CollectionBase
+from trent.exceptions import EmptyCollectionException, MissingValueException
 from trent.func import identity
+from trent.nth import first_
 
 
 if TYPE_CHECKING:
@@ -29,3 +32,13 @@ class Collection(CollectionBase, Iterable[T]):
         from trent.paired_coll import PairedCollection
         d = self.group_by_to_dict(f, val_fn)
         return PairedCollection(d.items())
+    
+
+    def rangify(self) -> PairedCollection[T, T]:
+        from trent.paired_coll import PairedCollection
+        try:
+            __init_val = self.head
+        except EmptyCollectionException:
+            raise EmptyCollectionException("Can't `rangify` an empty collection!")
+        __f = Rangifier(__init_val)
+        return PairedCollection(map(__f, self.tail()))
