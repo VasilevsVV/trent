@@ -24,15 +24,14 @@ from funcy import complement, filter, take
 
 from trent.coll_aux import (
     DistinctFilter,
-    EmptyCollectionException,
-    NestedIterationExceprion,
     PartByCounter,
     PartCounter,
     Rangifier,
 )
 from trent.concur import CPU_COUNT, TRENT_THREADPOOL
+from trent.exceptions import EmptyCollectionException, MissingValueException, NestedIterationExceprion
 from trent.func import identity, isnone
-from trent.nth import MissingValueException, first, first_, second, second_
+from trent.nth import first, first_, second, second_
 
 if TYPE_CHECKING:
     from coll import Collection

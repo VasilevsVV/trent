@@ -52,16 +52,3 @@ class PartByCounter:
         if self._pred(value):
             self.__part_number += 1
         return self.__part_number
-
-
-class NestedIterationExceprion(Exception):
-    def __str__(self) -> str:
-        return 'Nested iteration over `coll` class is invalid !!!'
-
-
-class EmptyCollectionException(Exception):
-    def __init__(self, msg: str) -> None:
-        self.__msg = msg
-
-    def __str__(self) -> str:
-        return f'Collection is empty! {self.__msg}'

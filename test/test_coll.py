@@ -1,6 +1,6 @@
 from itertools import chain
 from trent.coll import Collection
-from trent.coll_aux import EmptyCollectionException
+from trent.exceptions import EmptyCollectionException
 from trent.interface import seq
 from trent.paired_coll import PairedCollection
 

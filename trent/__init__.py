@@ -1,7 +1,7 @@
 from .coll import Collection
 from .paired_coll import PairedCollection
 from .nth import first, first_, second, second_, third
-from .func import gtr, gtr_
+from .func import gtr, gtr_, identity, isnone
 from .interface import (
     cat,
     catmap,
@@ -45,5 +45,7 @@ __all__ = [
     'third',
     
     'gtr',
-    'gtr_'
+    'gtr_',
+    'identity',
+    'isnone'
 ]

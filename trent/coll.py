@@ -23,11 +23,12 @@ from typing import (
 
 from funcy import complement, filter, take
 
-from trent.coll_aux import DistinctFilter, EmptyCollectionException, NestedIterationExceprion, PartByCounter, PartCounter, Rangifier
+from trent.coll_aux import DistinctFilter, PartByCounter, PartCounter, Rangifier
 from trent.collection_base import C, S, T, T1, T2, _no_value, CollectionBase
 from trent.concur import CPU_COUNT, TRENT_THREADPOOL
+from trent.exceptions import EmptyCollectionException, MissingValueException, NestedIterationExceprion
 from trent.func import identity, isnone
-from trent.nth import MissingValueException, first, first_, second, second_
+from trent.nth import first, first_, second, second_
 
 
 if TYPE_CHECKING:
