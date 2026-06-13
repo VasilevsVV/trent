@@ -93,8 +93,3 @@ def test_groupmap():
     c = Collection(range(10))
     res = c.group_by(__mod3).groupmap(__add)
     assert list(res) == ['0:0', '0:3', '0:6', '0:9', '1:1', '1:4', '1:7', '2:2', '2:5', '2:8']
-    
-
-
-if __name__ == '__main__':
-    test_pairmap_2()
