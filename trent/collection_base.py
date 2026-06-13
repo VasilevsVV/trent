@@ -29,7 +29,7 @@ from trent.coll_aux import (
     Rangifier,
 )
 from trent.concur import CPU_COUNT, TRENT_THREADPOOL
-from trent.exceptions import EmptyCollectionException, MissingValueException, NestedIterationExceprion
+from trent.exceptions import EmptyCollectionException, MissingValueException
 from trent.func import identity, isnone
 from trent.nth import first, first_, second, second_
 

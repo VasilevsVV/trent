@@ -2,6 +2,7 @@ from .coll import Collection
 from .paired_coll import PairedCollection
 from .nth import first, first_, second, second_, third
 from .func import gtr, gtr_, identity, isnone
+from .exceptions import MissingValueException, EmptyCollectionException
 from .interface import (
     cat,
     catmap,
@@ -47,5 +48,8 @@ __all__ = [
     'gtr',
     'gtr_',
     'identity',
-    'isnone'
+    'isnone',
+
+    'MissingValueException', 
+    'EmptyCollectionException'
 ]

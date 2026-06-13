@@ -7,11 +7,6 @@ class MissingValueException(Exception):
         return f'Missing {self._fn_name} for value: {self._value}'
 
 
-class NestedIterationExceprion(Exception):
-    def __str__(self) -> str:
-        return 'Nested iteration over `coll` class is invalid !!!'
-
-
 class EmptyCollectionException(Exception):
     def __init__(self, msg: str) -> None:
         self.__msg = msg

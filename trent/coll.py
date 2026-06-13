@@ -1,34 +1,15 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
 
-import concurrent.futures as conc
-from functools import cache, reduce
-from itertools import chain, groupby, takewhile
-from multiprocessing import Pool
-from pprint import pprint
-from time import sleep
 from typing import (
-    Any,
     Callable,
-    Dict,
-    Hashable,
     Iterable,
-    Iterator,
-    List,
-    Optional,
     Tuple,
-    TypeVar,
-    overload,
 )
 
-from funcy import complement, filter, take
 
-from trent.coll_aux import DistinctFilter, PartByCounter, PartCounter, Rangifier
-from trent.collection_base import C, S, T, T1, T2, _no_value, CollectionBase
-from trent.concur import CPU_COUNT, TRENT_THREADPOOL
-from trent.exceptions import EmptyCollectionException, MissingValueException, NestedIterationExceprion
-from trent.func import identity, isnone
-from trent.nth import first, first_, second, second_
+from trent.collection_base import T, T1, T2, CollectionBase
+from trent.func import identity
 
 
 if TYPE_CHECKING:
