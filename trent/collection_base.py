@@ -678,14 +678,21 @@ class CollectionBase(Iterable[T]):
         except StopIteration:
             raise EmptyCollectionException("Can't take head of empty collection")
         self._coll = chain([__head], __iter)
-        # self._is_iterated = False
         return __head
     
 
     def tail(self) -> Self:
+        """_summary_
+
+        Raises:
+            EmptyCollectionException: _description_
+
+        Returns:
+            Self: _description_
+        """        
         __iter = iter(self)
         try:
-            __head = next(__iter)
+            next(__iter)
         except StopIteration:
-            raise EmptyCollectionException("Can't take head of empty collection")
+            raise EmptyCollectionException("Can't take tail of empty collection")
         return self._step(__iter)
