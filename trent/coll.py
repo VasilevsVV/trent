@@ -83,33 +83,42 @@ class Collection(CollectionBase, Iterable[T]):
         return PairedCollection(d.items())
     
 
-    def as_spans(self) -> PairedCollection[T, T]:
+    def as_spans(self, *, fail_if_single: bool = False) -> PairedCollection[T, T]:
         """
         Pairs all adjacent elements in the collection into overlapping pairs (spans).
 
         This method operates entirely lazily as a sliding window of size 2, 
         matching each element with its immediate successor.
 
+        WARNING: If `fail_if_single` is not provided, and a collection only contains 1 element:
+            only one span of the same element will be created: `seq([1]).as_spans() => seq([(1, 1)])`
+
         Returns:
             PairedCollection[Tuple[T, T]]: A new PairedCollection containing the adjacent tuples.
+            fail_if_single (bool, optional): Indicates wether to fail if Collection only contains 1 elemnt. Defaults to False.
 
         Examples:
-            >>> list(CollectionBase([1, 2, 3, 4]).rangify())
+            >>> list(CollectionBase([1, 2, 3, 4]).as_spans())
             [(1, 2), (2, 3), (3, 4)]
 
-            >>> list(CollectionBase(['A', 'B', 'C']).rangify())
+            >>> list(CollectionBase([1]).as_spans())
+            [(1, 1)]
+
+            >>> list(CollectionBase(['A', 'B', 'C']).as_spans())
             [('A', 'B'), ('B', 'C')]
         """
         from trent.paired_coll import PairedCollection
         try:
             __init_val = self.head
         except EmptyCollectionException:
-            raise EmptyCollectionException("Can't `rangify` an empty collection!")
+            return PairedCollection()
         _tail = self.tail()
         if _tail.empty:
-            raise EmptyCollectionException("Can't rangify a collection of just one element!")
+            if fail_if_single:
+                raise EmptyCollectionException("Can't make spans from collection with only 1 element!")
+            return PairedCollection([(__init_val, __init_val)])
         __f = Rangifier(__init_val)
-        return PairedCollection(map(__f, self.tail()))
+        return PairedCollection(map(__f, _tail))
     
 
     def rangify(self) -> PairedCollection[T, T]:

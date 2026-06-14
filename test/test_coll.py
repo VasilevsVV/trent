@@ -255,3 +255,14 @@ def test_empty_4():
     c = seq(range(3))
     assert c.empty is False
     assert c.to_list() == [0,1,2]
+
+
+# =================================================================
+#       TEST "TAIL"
+
+
+def test_tail_1():
+    c = seq(range(4))
+    tail = c.tail()
+    assert tail.to_list() == [1, 2, 3]
+    assert c.to_list() == []
