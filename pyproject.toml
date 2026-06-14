@@ -30,8 +30,9 @@ dependencies = [
 
 
 [project.optional-dependencies]
-test = [
+dev = [
     "pytest",
+    "bumpversion"
 ]
 
 
