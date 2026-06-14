@@ -88,4 +88,4 @@ def map_to_pair(seq: Iterable[T], f_key:Callable[[T], T1], f_val: Optional[Calla
 
 
 def rangify(_seq: Iterable[T]) -> PairedCollection[T, T]:
-    return seq(_seq).rangify()
+    return seq(_seq).as_spans()

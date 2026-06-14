@@ -47,11 +47,21 @@ def test_group_by_1():
                     }
 
 
-def test_rangify():
+def test_as_spans_1():
     c = Collection(range(10))
-    res = c.rangify()
+    res = c.as_spans()
     assert list(res) == [(0, 1), (1, 2), (2, 3), (3, 4), (4, 5), (5, 6), (6, 7), (7, 8), (8, 9)]
 
+
+def test_as_spans_2():
+    c = Collection(range(0))
+    res = c.as_spans()
+    assert list(res) == []
+
+def test_as_spans_3():
+    c = Collection(range(1))
+    res = c.as_spans()
+    assert list(res) == []
 
 
 def test_pairmap_1():

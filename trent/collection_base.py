@@ -690,9 +690,13 @@ class CollectionBase(Iterable[T]):
         Returns:
             Self: _description_
         """        
-        __iter = iter(self)
+        # __iter = iter(self)
         try:
-            next(__iter)
-        except StopIteration:
+            # next(__iter)
+            self.head
+        except EmptyCollectionException:
             raise EmptyCollectionException("Can't take tail of empty collection")
-        return self._step(__iter)
+        _tail, _copy = tee(self.collection)
+        self._coll = _copy
+        next(_tail, None)
+        return self._step(_tail)
