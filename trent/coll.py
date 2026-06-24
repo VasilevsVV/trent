@@ -9,7 +9,7 @@ from typing import (
 
 
 from trent.coll_aux import Rangifier
-from trent.collection_base import T, T1, T2, CollectionBase
+from trent.collection_core import T, T1, T2, Collection
 from trent.exceptions import EmptyCollectionException, MissingValueException
 from trent.func import identity
 from trent.nth import first_
@@ -20,7 +20,7 @@ if TYPE_CHECKING:
 
 
 
-class Collection(CollectionBase, Iterable[T]):
+class CollectionImpl(Collection, Iterable[T]):
     def map_to_pair(self, f_key: Callable[[T], T1], f_val: Callable[[T], T2] = identity) -> PairedCollection[T1, T2]:
         """Map sequence to a PairedCollection of tuples, using 2 provided functions.
         

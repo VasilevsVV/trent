@@ -2,15 +2,17 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from typing import Any, Callable, Dict, Generic, Iterable, TypeVar, Tuple, overload
+from trent.coll_aux import Rangifier
+from trent.exceptions import EmptyCollectionException
 from trent.func import identity
 from trent.nth import first, first_, second, second_
-from trent.collection_base import C, R1, R2, T1, T2, CollectionBase
+from trent.collection_core import C, R1, R2, T1, T2, Collection
 
 if TYPE_CHECKING:
-    from trent.coll import Collection
+    from trent.coll import CollectionImpl
 
 
-class PairedCollection(CollectionBase[Tuple[T1, T2]], Iterable[Tuple[T1, T2]]):
+class PairedCollection(Collection[Tuple[T1, T2]], Iterable[Tuple[T1, T2]]):
 
 
     def pairmap(self, f:Callable[[T1, T2], R1]) -> Collection[R1]:
@@ -55,3 +57,50 @@ class PairedCollection(CollectionBase[Tuple[T1, T2]], Iterable[Tuple[T1, T2]]):
 
     def __repr__(self) -> str:
         return f'paired_coll({self._coll})'
+    
+
+    def as_spans(self, *, fail_if_single: bool = False) -> PairedCollection[tuple[T1, T2], tuple[T1, T2]]:
+        """
+        Pairs all adjacent elements in the collection into overlapping pairs (spans).
+
+        This method operates entirely lazily as a sliding window of size 2, 
+        matching each element with its immediate successor.
+
+        WARNING: If `fail_if_single` is not provided, and a collection only contains 1 element:
+            only one span of the same element will be created: `seq([1]).as_spans() => seq([(1, 1)])`
+
+        Returns:
+            PairedCollection[Tuple[T, T]]: A new PairedCollection containing the adjacent tuples.
+            fail_if_single (bool, optional): Indicates wether to fail if Collection only contains 1 elemnt. Defaults to False.
+
+        Examples:
+            >>> list(CollectionBase([1, 2, 3, 4]).as_spans())
+            [(1, 2), (2, 3), (3, 4)]
+
+            >>> list(CollectionBase([1]).as_spans())
+            [(1, 1)]
+
+            >>> list(CollectionBase(['A', 'B', 'C']).as_spans())
+            [('A', 'B'), ('B', 'C')]
+        """
+        from trent.paired_coll import PairedCollection
+        try:
+            __init_val = self.head
+        except EmptyCollectionException:
+            return PairedCollection()
+        _tail = self.tail()
+        if _tail.empty:
+            if fail_if_single:
+                raise EmptyCollectionException("Can't make spans from collection with only 1 element!")
+            return PairedCollection([(__init_val, __init_val)])
+        __f = Rangifier(__init_val)
+        return PairedCollection(map(__f, _tail))
+    
+
+    def rangify(self) -> PairedCollection[tuple[T1, T2], tuple[T1, T2]]:
+        """Deprecated version of `as_spans()`
+
+        Returns:
+            PairedCollection[T, T]: New PairedCollection of paired spans.
+        """        
+        return self.as_spans()

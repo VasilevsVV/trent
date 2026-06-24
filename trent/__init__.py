@@ -1,4 +1,5 @@
-from .coll import Collection
+from .collection_core import Collection
+from .coll import CollectionImpl
 from .paired_coll import PairedCollection
 from .nth import first, first_, second, second_, third
 from .func import gtr, gtr_, identity, isnone
@@ -23,6 +24,7 @@ from .interface import (
 
 __all__ = [
     'Collection',
+    'CollectionImpl',
     'PairedCollection',
     
     'seq',

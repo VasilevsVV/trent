@@ -34,13 +34,14 @@ from trent.func import identity, isnone
 from trent.nth import first, first_, second, second_
 
 if TYPE_CHECKING:
-    from trent.coll import Collection
+    from trent.coll import CollectionImpl
+    from trent.paired_coll import PairedCollection
 
 # ---
 
 
 
-C = TypeVar('C', bound="CollectionBase")
+C = TypeVar('C', bound="Collection")
 
 T = TypeVar('T')
 T1 = TypeVar('T1')
@@ -57,7 +58,7 @@ class _no_value():
         pass
 
 
-class CollectionBase(Iterable[T]):
+class Collection(Iterable[T]):
     """Represents a lazy sequence of type `T`"""    
     def __init__(self, collection: Optional[Iterable[T]] = None, /, *,
                  persisted: bool = False) -> None:
@@ -147,8 +148,8 @@ class CollectionBase(Iterable[T]):
     @classmethod
     def _mapping_step(cls:type[C], __coll: Iterable[S], /, *,
               persisted: bool = False) -> Collection[S]:
-        from trent.coll import Collection
-        return Collection(__coll, persisted=persisted)
+        from trent.coll import CollectionImpl
+        return CollectionImpl(__coll, persisted=persisted)
     
 
     @classmethod
@@ -401,9 +402,6 @@ class CollectionBase(Iterable[T]):
     
     # ==================================================================
     #           PAIRED
-    
-    @abstractmethod
-    def map_to_pair(self, f_key: Callable[[T], T1], f_val: Callable[[T], T2] = identity) -> "CollectionBase": ...
 
     def pairmap(self, f:Callable[[Any, Any], T1]) -> Collection[T1]:
         """Map over paired elements (tuple, list, Iterable, etc.) with `f(arg1, arg2)` function.
@@ -532,30 +530,6 @@ class CollectionBase(Iterable[T]):
                 return __map
         return self.map(__f).map(list) # type: ignore
     
-
-    # ==================================================================
-    #           GROUPED
-
-    @abstractmethod
-    def group_by(self, f:Callable[[T], T1], val_fn: Callable[[T], T2]) -> CollectionBase:
-        ...
-        # from trent.paired_coll import paired_icoll
-        # d = self.group_by_to_dict(f, val_fn)
-        # return paired_icoll(d.items())
-
-    @overload
-    def groupmap(self) -> Collection[tuple[Any, Any]]: ...
-    @overload
-    def groupmap(self, f:Callable[[Any, Any], S]) -> Collection[S]: ...
-    
-    def groupmap(self, f:Optional[Callable[[Any, Any], S]]=None):
-        def __unpack_group(group):
-            key, vals = group
-            return [(key, v) for v in vals]
-        pairs = self.mapcat(__unpack_group)
-        if f:
-            return pairs.pairmap(f)
-        return pairs
     
     
     # ==================================================================
@@ -598,7 +572,7 @@ class CollectionBase(Iterable[T]):
         Returns:
             coll[T]: Self
         """        
-        if isinstance(__iterable, CollectionBase):
+        if isinstance(__iterable, Collection):
             self._coll = chain(self._coll, __iterable.collection)
             return self
         self._coll = chain(self._coll, __iterable)
@@ -701,3 +675,75 @@ class CollectionBase(Iterable[T]):
         _tail = iter(self)
         next(_tail, None)
         return self._step(_tail)
+    
+
+
+    # ==================================================================
+    #           GROUPED
+
+    # @abstractmethod
+    # def group_by(self, f:Callable[[T], T1], val_fn: Callable[[T], T2]) -> Collection:
+    #     ...
+    #     # from trent.paired_coll import paired_icoll
+    #     # d = self.group_by_to_dict(f, val_fn)
+    #     # return paired_icoll(d.items())
+
+    @overload
+    def groupmap(self) -> Collection[tuple[Any, Any]]: ...
+    @overload
+    def groupmap(self, f:Callable[[Any, Any], S]) -> Collection[S]: ...
+    
+    def groupmap(self, f:Optional[Callable[[Any, Any], S]]=None):
+        def __unpack_group(group):
+            key, vals = group
+            return [(key, v) for v in vals]
+        pairs = self.mapcat(__unpack_group)
+        if f:
+            return pairs.pairmap(f)
+        return pairs
+    
+
+    # =======================================================================
+
+    @abstractmethod
+    def as_spans(self, *, fail_if_single: bool = False) -> "PairedCollection[T, T]":
+        """
+        Pairs all adjacent elements in the collection into overlapping pairs (spans).
+
+        This method operates entirely lazily as a sliding window of size 2, 
+        matching each element with its immediate successor.
+
+        WARNING: If `fail_if_single` is not provided, and a collection only contains 1 element:
+            only one span of the same element will be created: `seq([1]).as_spans() => seq([(1, 1)])`
+
+        Returns:
+            PairedCollection[Tuple[T, T]]: A new PairedCollection containing the adjacent tuples.
+            fail_if_single (bool, optional): Indicates wether to fail if Collection only contains 1 elemnt. Defaults to False.
+
+        Examples:
+            >>> list(CollectionBase([1, 2, 3, 4]).as_spans())
+            [(1, 2), (2, 3), (3, 4)]
+
+            >>> list(CollectionBase([1]).as_spans())
+            [(1, 1)]
+
+            >>> list(CollectionBase(['A', 'B', 'C']).as_spans())
+            [('A', 'B'), ('B', 'C')]
+        """
+        ...
+
+    @abstractmethod
+    def rangify(self) -> PairedCollection[T, T]:
+        """Deprecated version of `as_spans()`
+
+        Returns:
+            PairedCollection[T, T]: New PairedCollection of paired spans.
+        """  
+        ...
+
+    @abstractmethod
+    def group_by(self, f:Callable[[T], T1], val_fn: Callable[[T], T2] = identity) -> PairedCollection[T1, list[T2]]: ...
+
+    @abstractmethod
+    # def map_to_pair(self, f_key: Callable[[T], T1], f_val: Callable[[T], T2] = identity) -> "Collection": ...
+    def map_to_pair(self, f_key: Callable[[T], T1], f_val: Callable[[T], T2] = identity) -> PairedCollection[T1, T2]: ...
