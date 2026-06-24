@@ -146,7 +146,7 @@ class CollectionBase(Iterable[T]):
     
     @classmethod
     def _mapping_step(cls:type[C], __coll: Iterable[S], /, *,
-              persisted: bool = False) -> Collection:
+              persisted: bool = False) -> Collection[S]:
         from trent.coll import Collection
         return Collection(__coll, persisted=persisted)
     
