@@ -10,6 +10,7 @@ from .interface import (
     cmap,
     seq,
     coll,
+    icoll,
     groupcoll,
     groupmap,
     map_to_pair,
@@ -26,6 +27,7 @@ __all__ = [
     
     'seq',
     'coll',
+    'icoll',
     'cmap', 
     'cfilter',
     'pmap',
