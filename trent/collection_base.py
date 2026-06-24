@@ -34,7 +34,7 @@ from trent.func import identity, isnone
 from trent.nth import first, first_, second, second_
 
 if TYPE_CHECKING:
-    from coll import Collection
+    from trent.coll import Collection
 
 # ---
 

@@ -7,7 +7,7 @@ from trent.nth import first, first_, second, second_
 from trent.collection_base import C, R1, R2, T1, T2, CollectionBase
 
 if TYPE_CHECKING:
-    from coll import Collection
+    from trent.coll import Collection
 
 
 class PairedCollection(CollectionBase[Tuple[T1, T2]], Iterable[Tuple[T1, T2]]):

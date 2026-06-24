@@ -16,7 +16,7 @@ from trent.nth import first_
 
 
 if TYPE_CHECKING:
-    from paired_coll import PairedCollection
+    from trent.paired_coll import PairedCollection
 
 
 
