@@ -32,7 +32,9 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
     "pytest",
-    "bumpversion"
+    "bumpversion",
+    "build",
+    "twine"
 ]
 
 
