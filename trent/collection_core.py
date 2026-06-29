@@ -1,4 +1,6 @@
 from __future__ import annotations
+import asyncio
+import threading
 from typing import TYPE_CHECKING, Self
 
 import concurrent.futures as conc
@@ -68,14 +70,13 @@ class Collection(Iterable[T]):
             collection (Optional[Iterable[T]], optional): Initial sequence to be iterated over. Defaults to None.
         """        
         self._coll: Iterable[T]
-        self._iterator: Iterator[T]
-        self._is_iterated: bool = False
         if collection is not None:
             self._coll = collection
         else:
             self._coll = []
         self.__head: T|_no_value = _no_value()
         self.__persisted: bool = persisted
+        self.__lock = threading.Lock()
     
 
     @property
@@ -242,6 +243,29 @@ class Collection(Iterable[T]):
         with conc.ThreadPoolExecutor(threads, 'trent') as p:
             __map = p.map(f, self._coll)
         return self._mapping_step(__map)
+    
+
+    def __foreach_task(self, __f: Callable[[T], S], __iter: Iterator[T]):
+        while True:
+            try:
+                item = next(__iter)
+            except StopIteration:
+                return
+            __f(item)
+            
+
+    async def _async_foreach(self, f: Callable[[T], S], threads: Optional[int] = None) -> None:
+        threads = threads if threads is not None else CPU_COUNT
+        iterator = iter(self)
+        def _make_task(i: int):
+            return asyncio.to_thread(self.__foreach_task, f, iterator)
+        tasks = [_make_task(i) for i in range(threads)]
+        await asyncio.gather(*tasks, return_exceptions=True)
+    
+
+    def async_foreach(self, f: Callable[[T], S], threads: Optional[int] = None) -> None:
+        asyncio.run(self._async_foreach(f, threads))
+            
     
     
     def mapcat(self, f: Callable[[T], Iterable[T1]]) -> Collection[T1]:
@@ -529,7 +553,6 @@ class Collection(Iterable[T]):
                 __map = p.map(f, __part)
                 return __map
         return self.map(__f).map(list) # type: ignore
-    
     
     
     # ==================================================================

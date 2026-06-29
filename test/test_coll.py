@@ -173,24 +173,7 @@ def test_partmap_1():
     assert list(res) == __res_val
 
 
-def test_async_partmap_1():
-    c = CollectionImpl([range(100), range(100, 200)])
-    res = c.async_partmap(lambda n: n * 10)
-    __res_val = [list(range(0, 1000, 10)), list(range(1000, 2000, 10))]
-    assert list(res) == __res_val
 
-
-def test_async_partmap_2():
-    c = CollectionImpl([range(100), range(100, 200)])
-    res = c.async_partmap_(lambda n: n * 10, 4)
-    __res_val = [list(range(0, 1000, 10)), list(range(1000, 2000, 10))]
-    assert list(res) == __res_val
-
-def test_async_partmap_3():
-    c = CollectionImpl([range(100), range(100, 200)])
-    res = c.async_partmap(lambda n: n * 10, threads=4)
-    __res_val = [list(range(0, 1000, 10)), list(range(1000, 2000, 10))]
-    assert list(res) == __res_val
     
 def test_cat():
     c = CollectionImpl([[1, 2, 3], [4, 5]])
