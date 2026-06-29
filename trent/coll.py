@@ -1,637 +1,130 @@
 from __future__ import annotations
+from typing import TYPE_CHECKING
 
-import concurrent.futures as conc
-from functools import cache, reduce
-from itertools import chain, groupby, takewhile
-from multiprocessing import Pool
-from pprint import pprint
-from time import sleep
 from typing import (
-    Any,
     Callable,
-    Dict,
-    Hashable,
     Iterable,
-    Iterator,
-    List,
-    Optional,
     Tuple,
-    TypeVar,
-    overload,
 )
 
-from funcy import complement, filter, take
 
-from trent.coll_aux import DistinctFilter, PartByCounter, PartCounter, Rangifier
-from trent.concur import CPU_COUNT, TRENT_THREADPOOL
-from trent.func import identity, isnone
-from trent.nth import MissingValueException, first, first_, second, second_
-
-T = TypeVar('T')
-T1 = TypeVar('T1')
-T2 = TypeVar('T2')
-S = TypeVar('S')
+from trent.coll_aux import Rangifier
+from trent.collection_core import T, T1, T2, Collection
+from trent.exceptions import EmptyCollectionException, MissingValueException
+from trent.func import identity
+from trent.nth import first_
 
 
-class __no_value():
-    def __init__(self) -> None:
-        pass
+if TYPE_CHECKING:
+    from trent.paired_coll import PairedCollection
 
 
-class NestedIterationExceprion(Exception):
-    def __str__(self) -> str:
-        return 'Nested iteration over `coll` class is invalid !!!'
 
-
-class EmptyCollectionException(Exception):
-    def __init__(self, msg: str) -> None:
-        self.__msg = msg
-    
-    def __str__(self) -> str:
-        return f'Collection is empty! {self.__msg}'
-
-
-class icoll(Iterable[T]):
-    """Represents a lazy sequence of type `T`"""    
-    def __init__(self, collection: Optional[Iterable[T]] = None) -> None:
-        """Create a lazy sequence `icoll`, with given Iterables collection. Or empty - if None.
-
-        Args:
-            collection (Optional[Iterable[T]], optional): Initial sequence to be iterated over. Defaults to None.
-        """        
-        self._coll: Iterable[T]
-        self._iterator: Iterator[T]
-        self._is_iterated: bool = False
-        if collection is not None:
-            self._coll = collection
-        else:
-            self._coll = []
-    
-    @property
-    def collection(self) -> Iterable[T]:
-        """Iternal Iterable collection. WARNING: iterating over it outside of class methods may break youre code.
-
-        Returns:
-            Iterable[T]: Internal Iterable sequnce
-        """        
-        return self._coll
-    
-    # =================================================================
-    #           TODO
-    
-    def _init_collection(self, collection:Optional[Iterable[T]]=None) -> Iterable[T]:
-        if collection is None:
-            return []
-        elif isinstance(collection, icoll):
-            return collection.collection
-        elif isinstance(collection, Iterable):
-            return collection
-        else:
-            raise Exception(f'Invalid collection type: {type(collection)}. Expected Iterable!')
-    
-    
-    def _step(self, __coll: Iterable[S]) -> icoll[S]:
-        return icoll(__coll)
-
-    # ==================================================================
-    #           MAPS
-    
-    def map(self, f: Callable[[T], S]) -> icoll[S]:
-        """Maps over the elements of collection with function `f(el: T) -> S`, and retrun a new collection icoll[S].
-
-        Args:
-            f (Callable[[T], S]): Callable to process sequence elements.
-
-        Returns:
-            icoll[S]: New collection.
-        """        
-        return self._step(map(f, self._coll))
-    
-    
-    def pmap(self, f: Callable[[T], S]) -> icoll[S]:
-        """Performes `map` in parallel. 
-        Uses "multiprocessing" lib.
-        Executes tasks in separate processes. Use for CPU bound tasks
-
-        Args:
-            f (Callable[[T], S]): Fuction to map elements with
-
-        Returns:
-            icoll[S]: New collection.
-        """
-        with Pool(max(int(CPU_COUNT / 4), 2)) as pool:
-            __map = pool.map(f, self._coll)
-        return self._step(__map)
-    
-    
-    def pmap_(self, f: Callable[[T], S], threads: int = int(CPU_COUNT / 4)) -> icoll[S]:
-        """Performed `map` in parallel. And a number of threads to use can be defined.
-        Uses "multiprocessing" lib.
-        Executes tasks in separate processes. Use for CPU bound tasks
-
-        Args:
-            f (Callable[[T], S]): Function to map elements with
-            threads (int, optional): A number of async threads to use for maing. Defaults to CPU_COUNT.
-
-        Returns:
-            icoll[S]: New collection
-        """        
-        assert threads >= 1, 'Async Thread count CAN NOT be < 1'
-        if threads == 1:
-            return self.map(f)
-        with Pool(threads) as p:
-            __map = p.map(f, self._coll)
-        return self._step(__map)
-    
-
-    def async_map(self, f: Callable[[T], S]) -> icoll[S]:
-        """Performes `map` asyncronously.
-        Uses "concur" lib.
-        Executes tasks in current process. Use for Disk/Network bound tasks
-
-        Args:
-            f (Callable[[T], S]): Fuction to map elements with
-
-        Returns:
-            icoll[S]: New collection.
-        """        
-        __map = TRENT_THREADPOOL.map(f, self._coll)
-        return self._step(__map)
-    
-    
-    def async_map_(self, f: Callable[[T], S], threads: int = int(CPU_COUNT / 4)) -> icoll[S]:
-        """Performed `map` asyncronously. And a number of threads to use can be defined.
-        Uses "concur" lib.
-        Executes tasks in current process. Use for Disk/Network bound tasks
-
-        Args:
-            f (Callable[[T], S]): Function to map elements with
-            threads (int, optional): A number of async threads to use for maing. Defaults to CPU_COUNT.
-
-        Returns:
-            icoll[S]: New collection
-        """        
-        assert threads >= 1, 'Async Thread count CAN NOT be < 1'
-        if threads == 1:
-            return self.map(f)
-        with conc.ThreadPoolExecutor(threads, 'trent') as p:
-            __map = p.map(f, self._coll)
-        return self._step(__map)
-    
-    
-    def mapcat(self, f: Callable[[T], Iterable[T1]]) -> icoll[T1]:
-        """Maps elements with function `f(el) -> Iterable`, and concatenates resulting collectinns of iterables.
-
-        Args:
-            f (Callable[[T], Iterable[T1]]): Function to map elements with. MUST return an Iterable.
-
-        Returns:
-            icoll[T1]: New collection.
-        """        
-        m = map(f, self._coll)
-        m = chain(* m)
-        return self._step(m)
-    
-    
-    def cat(self) -> icoll[Any]:
-        """Concatenates sequence of Iterables into one sequence.
-        ```
-        c = seq([[1, 2], [3, 4]]).cat()
-        assert c.to_list() == [1, 2, 3, 4]
-        ```
-
-        Returns:
-            icoll[Any]: New collection
-        """
-        return self.mapcat(identity) # type: ignore
-    
-    
-    def catmap(self, f: Callable[[Any], T1]) -> icoll[T1]:
-        """Concatenate sequence (as in cat()), and than - performe a `map` over elements with funcion `f`
-
-        Args:
-            f (Callable[[Any], T1]): Function to map elements with
-
-        Returns:
-            icoll[T1]: New collection
-        """        
-        return self.cat().map(f)
-    
-    
-    def apply(self, f:Callable[[T], Optional[Any]]) -> icoll[T]:
-        """Applyes function  `f` to all elements, but not maps elements to new values. Resulting coll witll have the same elements.
-        Usefull for:
-            - Updating dict elements in icoll[dict]
-            - calling methods on class-objects:
-             
-            ```
-            lst: icoll[God] = lst.apply(Dog.bark)
-            ```
-            - calling functions in icoll[Callable]
-
-        Args:
-            f (Callable[[T], Optional[Any]]): Function to apply to elements
-
-        Returns:
-            icoll[T]: Collection of the same elements
-        """        
-        def __apply(el: T) -> T:
-            f(el)
-            return el
-        return self.map(__apply)
-    
-    
-    def filter(self, f: Callable[[T], Any]) -> icoll[T]:
-        """Filter elements in sequence by predicate `f`. (remove `el` if `not f(el)y)
-
-        Args:
-            f (Callable[[T], Any]): Predicate function
-
-        Returns:
-            icoll[T]: New collection
-        """        
-        return self._step(filter(f, self._coll))
-    
-    
-    def remove(self, f: Callable[[T], Any]) -> icoll[T]:
-        """Removed elements from sequence by predicate `f`. (remove `el` if `f(el)`)
-
-        Args:
-            f (Callable[[T], Any]): Predicate function
-
-        Returns:
-            icoll[T]: New collection
-        """        
-        _f = complement(f)
-        return self.filter(_f)
-    
-    
-    @overload
-    def remove_none(self) -> icoll[Any]: ...
-    @overload
-    def remove_none(self, * _types: type[S]) -> icoll[S]: ...
-    
-    def remove_none(self, * _types): # type: ignore
-        """WARNING: removes typehinting for given `coll`. Returns icoll[Any].
-        Use only for avoiding typehint warnings about None type!
-
-        Returns:
-            icoll[Any]: icoll[T] with all None removed
-        """        
-        return self.remove(isnone)
-    
-    
-    def unique(self) -> icoll[T]:
-        """Remove all duplicate elements in sequence.
-        WARN: demands extra RAM.
-
-        Returns:
-            icoll[T]: New collection of unique elements.
-        """        
-        return self.distinct_by(identity)
-    
-    
-    def distinct_by(self, f:Callable[[Any], Hashable]=identity) -> icoll[T]:
-        """Remove duplicate elements by predicate `f`.
-        (Remove `el` of `f(el)` is already present)
-
-        Args:
-            f (Callable[[Any], Hashable], optional): Predicate function. Defaults to identity.
-
-        Returns:
-            icoll[T]: New collection.
-        """        
-        __pred = DistinctFilter(f)
-        return self.filter(__pred)
-    
-    # =================================================================
-    #           TAKE
-    
-    def take(self, n: int)-> icoll[T]:
-        """Take `n` elements from sequence."""        
-        assert n >= 0, 'You can only `take` >= 0 elements!'
-        return self._step(take(n, self._coll))
-    
-    def takewhile(self, predicate:Callable[[T], bool]) -> icoll[T]:
-        """Take elements while `predicate(el)`.
-
-        Args:
-            predicate (Callable[[T], bool]): Predicate function
-
-        Returns:
-            icoll[T]: New collection
-        """        
-        return self._step(takewhile(predicate, self._coll))
+class CollectionImpl(Collection, Iterable[T]):
+    def map_to_pair(self, f_key: Callable[[T], T1], f_val: Callable[[T], T2] = identity) -> PairedCollection[T1, T2]:
+        """Map sequence to a PairedCollection of tuples, using 2 provided functions.
         
-    
-    # ==================================================================
-    #           PAIRED
-    
-    def pairmap(self, f:Callable[[Any, Any], T1]) -> icoll[T1]:
-        """Map over paired elements (tuple, list, Iterable, etc.) with `f(arg1, arg2)` function.
-        WARNING: sequence elements MUST be iterables.
-        NOTE: Iterable elements can contain more than 2 elements, but extra values will be lost.
-        NOTE: If elements contain less than 2 values - `None` will be passed to `f` instead.
+        Resulting tuples created as: `(f_key(value), f_val(value))`
 
         Args:
-            f (Callable[[Any, Any], T1]): _description_
+            f_key (Callable[[T], T1]): function to generate first value in pair (tuple).
+            f_val (Callable[[T], T2], optional): function to generate second value in pair (tuple). Defaults to identity.
 
         Returns:
-            icoll[T1]: _description_
-        """        
-        return self.map(lambda p: f(first(p), second(p)))
-    
-    
-    def map_to_pair(self, f_key: Callable[[T], T1], f_val: Callable[[T], T2] = identity) -> icoll[Tuple[T1, T2]]:
+            PairedCollection[T1, T2]: New PairedCollection, where T1,T2 - types returned by f_key & f_val
+        
+        Examples:
+        Using only `f_key` (retains the original element as the value via `identity`):
+        >>> words = Collection(["apple", "pear"])
+        >>> words.map_to_pair(len).to_list()
+        [(5, 'apple'), (4, 'pear')]
+
+        Providing both `f_key` and `f_val` to transform both elements of the tuple:
+        >>> nums = Collection([1, 2, 3])
+        >>> nums.map_to_pair(lambda x: f"id_{x}", lambda x: x * 10).to_list()
+        [('id_1', 10), ('id_2', 20), ('id_3', 30)]
+        """         
+        from trent.paired_coll import PairedCollection
         def __pair(val: T) -> Tuple[T1, T2]:
             return (f_key(val), f_val(val))
-        return self.map(__pair)
+        return PairedCollection(self.map(__pair))
     
-    
-    def group_by_to_dict(self, f:Callable[[T], T1], val_fn: Callable[[T], T2] = identity) -> Dict[T1, list[T2]]:
-        def __group(val: T) -> Tuple[T1, T2]:
-            return (f(val), val_fn(val))
-        pairs = self.map(__group).to_list()
-        res: dict[T1, list[T2]] = {}
-        for p in pairs:
-            k,v = p
-            if k in res:
-                res[k].append(v)
-            else:
-                res[k] = [v]
-        return res
-    
-    # ==================================================================
-    #           PARTITIONED
 
-    def partition(self, partition_size: int, /) -> icoll[list[T]]:
-        """Partition sequence into chunks of size `partition_size`.
+    def group_by(self, f:Callable[[T], T1], val_fn: Callable[[T], T2] = identity) -> PairedCollection[T1, list[T2]]:
+        """Group elements by a result of function `f`.
+        WARNING: This operatios is NOT LAZY (requires to evalueate all elements of Collection.) 
+        It may require a lot of RAM.
 
         Args:
-            partition_size (int): Size of partitions
+            f (Callable[[T], T1]): Function to be used as a grouping key generator
+            val_fn (Callable[[T], T2], optional): Function to map values of groups. Defaults to identity.
 
         Returns:
-            icoll[list[T]]: New collection.
+            PairedCollection[T1, list[T2]]: New grouped PairedCollection. 
+            Where T1 - type returned by function `f`. And T2 - type returned by `val_fn`
+        
+        Examples:
+        Grouping elements by a key extractor function (with `val_fn` defaulting to identity):
+        >>> words = Collection(["apple", "pear", "banana", "kiwi"])
+        >>> words.group_by(len).to_list()
+        [(5, ['apple']), (4, ['pear', 'kiwi']), (6, ['banana'])]
+
+        Grouping structured objects and extracting/transforming elements using `val_fn`:
+        >>> logs = Collection([
+        ...     {"env": "prod", "msg": "Error A"},
+        ...     {"env": "test", "msg": "Debug B"},
+        ...     {"env": "prod", "msg": "Error C"}
+        ... ])
+        >>> logs.group_by(lambda x: x["env"], val_fn=lambda x: x["msg"]).to_list()
+        [('prod', ['Error A', 'Error C']), ('test', ['Debug B'])]
         """        
-        groups = groupby(self._coll, PartCounter(partition_size))
-        c = map(second_, groups)
-        c = map(list, c)
-        return self._step(c)
-    
-    
-    def partition_by(self, pred: Callable[[T], Any]) -> icoll[list[T]]:
-        """Partition sequence int ochunks devided by predicate `pred`.
-        Where every time `pred(value)` return True - a new partition will be created.
-        ```
-        c = icoll(range(6))
-        c.partition_by(lambda n: n % 2 == 0).to_list() == [[0, 1], [2, 3], [4, 5]]
-        ```
-
-        Args:
-            pred (Callable[[T], Any]): Predicate to devide sequence into chunks by.
-
-        Returns:
-            icoll[list[T]]: New collection.
-        """        
-        groups = groupby(self._coll, PartByCounter(pred))
-        c = map(second_, groups)
-        c = map(list, c)
-        return self._step(c)
-    
-
-    def partmap(self, f: Callable[[Any], S]) -> icoll[List[S]]:
-        """Map over elements in partitioned sequence (Sequence of Iterable[T]).
-        For convenience, if you want to map elements, without concatenating partitions.
-        WARNING: sequence elements MUST be iterables.
-        NOTE: Resulted partitions will be converted to lists, for consistency.
-
-        Args:
-            f (Callable[[Any], S]): Callable to process sequence elements.
-
-        Returns:
-            icoll[List[S]]: New partitioned collection.
-        """
-        def __f(__part: Iterable) -> Iterable[S]:
-            return map(f, __part)
-        return self.map(__f).map(list) # type: ignore
-    
-
-    def async_partmap(self, f: Callable[[Any], S], /, *,
-                      threads: Optional[int] = None) -> icoll[List[S]]:
-        """Asyncronous Map over elements in partitioned sequence (Sequence of Iterable[T]).
-        For convenience, if you want to map elements, without concatenating partitions.
-        WARNING: sequence elements MUST be iterables.
-        NOTE: Resulted partitions will be converted to lists, for consistency.
-
-        Args:
-            f (Callable[[Any], S]): Callable to process sequence elements.
-
-        Returns:
-            icoll[List[S]]: New partitioned collection.
-        """
-        if threads is not None:
-            return self.async_partmap_(f, threads)
-        def __f(__part: Iterable) -> Iterable[S]:
-            return TRENT_THREADPOOL.map(f, __part)
-        return self.map(__f).map(list) # type: ignore
-    
-
-    def async_partmap_(self, f: Callable[[Any], S], threads: Optional[int] = None, /) -> icoll[List[S]]:
-        """Asyncronous Map over elements in partitioned sequence (Sequence of Iterable[T]).
-        For convenience, if you want to map elements, without concatenating partitions.
-        WARNING: sequence elements MUST be iterables.
-        NOTE: Resulted partitions will be converted to lists, for consistency.
-
-        Args:
-            f (Callable[[Any], S]): Callable to process sequence elements.
-            threads (Optional[int], optional): Number f async threads. Defaults to None.
-
-        Returns:
-            icoll[List[S]]: New partitioned collection.
-        """        
-        __threads = threads if threads else CPU_COUNT * 2
-        assert __threads >= 1, 'Async Thread count CAN NOT be < 1'
-        if __threads == 1:
-            return self.partmap(f)
-        def __f(__part: Iterable) -> Iterable[S]:
-            with conc.ThreadPoolExecutor(__threads, 'trent') as p:
-                __map = p.map(f, __part)
-                return __map
-        return self.map(__f).map(list) # type: ignore
-    
-
-    # ==================================================================
-    #           GROUPED
-
-    def group_by(self, f:Callable[[T], T1], val_fn: Callable[[T], T2] = identity) -> icoll[tuple[T1, list[T2]]]:
+        from trent.paired_coll import PairedCollection
         d = self.group_by_to_dict(f, val_fn)
-        return self._step(d.items())
+        return PairedCollection(d.items())
     
 
-    @overload
-    def groupmap(self) -> icoll[tuple[Any, Any]]: ...
-    @overload
-    def groupmap(self, f:Callable[[Any, Any], S]) -> icoll[S]: ...
-    
-    def groupmap(self, f:Optional[Callable[[Any, Any], S]]=None):
-        def __unpack_group(group):
-            key, vals = group
-            return [(key, v) for v in vals]
-        pairs = self.mapcat(__unpack_group)
-        if f:
-            return pairs.pairmap(f)
-        return pairs
-    
-    
-    def rangify(self) -> icoll[Tuple[T, T]]:
-        __it = iter(self._coll)
-        try:
-            __init_val = first_(__it)
-        except MissingValueException:
-            raise EmptyCollectionException("Can't `rangify` an empty collection!")
-        __f = Rangifier(__init_val)
-        return self._step(map(__f, __it))
-    
-    
-    # ==================================================================
-    #           TRANSFORMATIONS
-    
-    def concat(self, *__iterables: Iterable[T]) -> icoll[T]:
-        res = self._step(self._coll)
-        for __it in __iterables:
-            res.extend_(__it)
-        return res
-    
-    def extend(self, __iterable: Iterable[T]) -> icoll[T]:
-        return self.concat(__iterable)
-    
-    
-    def conj(self, *vals: T):
-        return self.concat(vals)
-    
-    
-    def append(self, __val: T) -> icoll[T]:
-        return self._step(self._coll).append_(__val)
-    
-    
-    def cons(self, __val: T):
-        return self._step(chain([__val], self._coll))
+    def as_spans(self, *, fail_if_single: bool = False) -> PairedCollection[T, T]:
+        """
+        Pairs all adjacent elements in the collection into overlapping pairs (spans).
 
-    
-    def __add__(self, __iter: Iterable[T]) -> icoll[T]:
-        return self.concat(__iter)
-    
-    # ===============================================================
-    #   IN_PLACE TRANSFORMATIONS
-    
-    def extend_(self, __iterable: Iterable[T]) -> icoll[T]:
-        """In-place extend. Addes `__iterable` to the end of `coll`.
+        This method operates entirely lazily as a sliding window of size 2, 
+        matching each element with its immediate successor.
 
-        Args:
-            __iterable (Iterable[T]): Iterable to be concatenated to the end
+        WARNING: If `fail_if_single` is not provided, and a collection only contains 1 element:
+            only one span of the same element will be created: `seq([1]).as_spans() => seq([(1, 1)])`
 
         Returns:
-            coll[T]: Self
+            PairedCollection[Tuple[T, T]]: A new PairedCollection containing the adjacent tuples.
+            fail_if_single (bool, optional): Indicates wether to fail if Collection only contains 1 elemnt. Defaults to False.
+
+        Examples:
+            >>> list(CollectionBase([1, 2, 3, 4]).as_spans())
+            [(1, 2), (2, 3), (3, 4)]
+
+            >>> list(CollectionBase([1]).as_spans())
+            [(1, 1)]
+
+            >>> list(CollectionBase(['A', 'B', 'C']).as_spans())
+            [('A', 'B'), ('B', 'C')]
+        """
+        from trent.paired_coll import PairedCollection
+        try:
+            __init_val = self.head
+        except EmptyCollectionException:
+            return PairedCollection()
+        _tail = self.tail()
+        if _tail.empty:
+            if fail_if_single:
+                raise EmptyCollectionException("Can't make spans from collection with only 1 element!")
+            return PairedCollection([(__init_val, __init_val)])
+        __f = Rangifier(__init_val)
+        return PairedCollection(map(__f, _tail))
+    
+
+    def rangify(self) -> PairedCollection[T, T]:
+        """Deprecated version of `as_spans()`
+
+        Returns:
+            PairedCollection[T, T]: New PairedCollection of paired spans.
         """        
-        if isinstance(__iterable, icoll):
-            self._coll = chain(self._coll, __iterable.collection)
-            return self
-        self._coll = chain(self._coll, __iterable)
-        return self
-    
-    def append_(self, __val: T) -> icoll[T]:
-        self.extend_([__val])
-        return self
-    
-    
-    def cons_(self, __val: T):
-        self._coll = chain([__val], self._coll)
-    
-    
-    # =================================================================
-    #           COLLECTING
-    
-    def to_list(self) -> list[T]:
-        return list(self._coll)
-    
-    def to_set(self) -> set[T]:
-        return set(self._coll)
-    
-    
-    def collect(self, f: Callable[[list[T]], S] = identity) -> S:
-        return f(self.to_list())
-    
-    
-    
-    @overload
-    def reduce(self, f: Callable[[T, T], T]) -> T: ...
-    @overload
-    def reduce(self, f: Callable[[S, T], S], initial: S) -> S: ...
-    
-    def reduce(self, f: Callable, initial: Optional[S] = None) -> S | T:
-        if initial is None:
-            return reduce(f, self)
-        return reduce(f, self, initial)
-    
-    
-    
-    # ================================================================
-    #           ITERATION
-    
-    def _iter(self):
-        if self._is_iterated:
-            raise NestedIterationExceprion
-        self._iterator = iter(self._coll)
-        self._is_iterated = True
-        return self
-    
-    def __iter__(self):
-        return self._iter()
-    
-    
-    def _next(self):
-        try:
-            return next(self._iterator)
-        except StopIteration:
-            self._is_iterated = False
-            raise StopIteration
-    
-    def __next__(self) -> T:
-        return self._next()
-    
-    def __repr__(self) -> str:
-        # Persisting collection values. For easier debugging.
-        # self._coll = list(self._coll)
-        return f'coll({self._coll})'
-
-
-
-
-class persistent_coll(icoll, Iterable[T]):
-    def __init__(self, collection: Iterable | None = None) -> None:
-        self.__buffer: list[T] = []
-        self.__is_iterated: bool = False
-        super().__init__(collection)
-    
-    
-    def _step(self, __coll: Iterable[S]) -> icoll[S]:
-        return persistent_coll(__coll)
-    
-    
-    def _iter(self):
-        if self.__is_iterated:
-            raise NestedIterationExceprion
-        self._iterator = iter(self._coll)
-        self.__buffer = []
-        self.__is_iterated = True
-        return self
-    
-    def _next(self):
-        try:
-            res = next(self._iterator)
-        except StopIteration:
-            self._coll = self.__buffer
-            self.__is_iterated = False
-            raise StopIteration
-        self.__buffer.append(res)
-        return res
+        return self.as_spans()

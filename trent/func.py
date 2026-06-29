@@ -1,4 +1,4 @@
-from typing import Any, Callable, Dict, Hashable, Iterable, Optional, Sequence, TypeVar
+from typing import Any, Callable, Dict, Hashable, Iterable, Optional, Sequence, TypeIs, TypeVar
 
 from trent.nth import __no_value, nth
 
@@ -41,7 +41,7 @@ def gtr_(key:Hashable, _type: type[_T], /) -> Callable[[Dict[Any, Any]], _T]:
     return __f
 
 
-def isnone(val: Any) -> bool:
+def isnone(val: Any) -> TypeIs[None]:
     return val is None
 
 

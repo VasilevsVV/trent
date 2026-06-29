@@ -1,6 +1,9 @@
-from .coll import icoll
-from .nth import first, first_, second, second_
-from .func import gtr, gtr_
+from .collection_core import Collection
+from .coll import CollectionImpl
+from .paired_coll import PairedCollection
+from .nth import first, first_, second, second_, third
+from .func import gtr, gtr_, identity, isnone
+from .exceptions import MissingValueException, EmptyCollectionException
 from .interface import (
     cat,
     catmap,
@@ -8,6 +11,7 @@ from .interface import (
     cmap,
     seq,
     coll,
+    icoll,
     groupcoll,
     groupmap,
     map_to_pair,
@@ -19,10 +23,13 @@ from .interface import (
 )
 
 __all__ = [
-    'icoll',
+    'Collection',
+    'CollectionImpl',
+    'PairedCollection',
     
     'seq',
     'coll',
+    'icoll',
     'cmap', 
     'cfilter',
     'pmap',
@@ -40,7 +47,13 @@ __all__ = [
     'first_',
     'second',
     'second_',
+    'third',
     
     'gtr',
-    'gtr_'
+    'gtr_',
+    'identity',
+    'isnone',
+
+    'MissingValueException', 
+    'EmptyCollectionException'
 ]

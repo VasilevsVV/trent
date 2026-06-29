@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "trent"
-version = "0.4.8"
+version = "0.5.4"
 
 authors = [
     {name = "Vasyl Tsiura", email = "morfey.rulit@gmail.com"}
@@ -17,7 +17,7 @@ maintainers = [
 description = "Convenient Sequence/Iterable/Collection processing for python. Inspired by Clojure mapping and threading macros."
 
 readme = "README.md"
-requires-python = ">=3.10.12"
+requires-python = ">=3.13"
 keywords = [
     "Sequence", "Collection", "mapping", "stream",
     "functional", "iteration", "concurrency", "group", "by"]
@@ -26,6 +26,15 @@ keywords = [
 dependencies = [
     "funcy",
     "psutil"
+]
+
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "bumpversion",
+    "build",
+    "twine"
 ]
 
 

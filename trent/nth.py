@@ -1,18 +1,11 @@
 from typing import Any, Iterable, Optional, Sequence, Tuple, TypeVar, overload
 
+from trent.exceptions import MissingValueException
+
 # ---------------------
 
 _T = TypeVar('_T')
 _T2 = TypeVar('_T2')
-
-
-class MissingValueException(Exception):
-    def __init__(self, val, fn_name: str) -> None:
-        self._value = val
-        self._fn_name = fn_name
-    
-    def __str__(self) -> str:
-        return f'Missing {self._fn_name} for value: {self._value}'
 
 
 class __no_value():
