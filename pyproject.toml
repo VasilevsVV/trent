@@ -32,6 +32,8 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
     "pytest",
+    "pytest-cov",
+    "pytest-asyncio",
     "bumpversion",
     "build",
     "twine"
@@ -55,16 +57,35 @@ typeCheckingMode = "standard"
 minversion = "8.0"
 
 pythonpath = [
-    "trent"
+    "."
 ]
 testpaths = [
     "test"
 ]
 python_files = [
-    'test_*.py', 
+    'test_*.py',
     '*_test.py'
 ]
 python_functions = [
     'test_*',
     '*_test'
     ]
+
+
+# =================================================================
+#           ASYNCIO (pytest-asyncio)
+
+[tool.asyncio]
+mode = "auto"
+
+
+# =================================================================
+#           COVERAGE (reporting only, no hard gate)
+
+[tool.coverage.run]
+source = ["trent"]
+
+
+[tool.coverage.report]
+show_missing = true
+fail_under = 0
