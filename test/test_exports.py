@@ -173,7 +173,7 @@ def test_empty_collection_exception_exported():
 
 def test_all_exports():
     assert isinstance(trent.__all__, list)
-    assert len(trent.__all__) == 29
+    assert len(trent.__all__) == 30
 
 
 def test_all_names_are_attributes():

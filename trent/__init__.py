@@ -21,6 +21,7 @@ from .interface import (
     pmap_,
     rangify,
 )
+from .concur import shutdown_trent_pool
 
 __all__ = [
     'Collection',
@@ -34,6 +35,7 @@ __all__ = [
     'cfilter',
     'pmap',
     'pmap_',
+    'shutdown_trent_pool',
     'cat',
     'mapcat',
     'catmap',
