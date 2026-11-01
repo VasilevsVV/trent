@@ -48,8 +48,8 @@ def pmap(f: Callable[[T], T2], seq: Optional[Iterable[T]]) -> Collection[T2]:
     return CollectionImpl(seq).pmap(f)
 
 
-def pmap_(f: Callable[[T], T2], seq: Optional[Iterable[T]], threads: int = CPU_COUNT) -> Collection[T2]:
-    return CollectionImpl(seq).pmap_(f, threads)
+def pmap_(f: Callable[[T], T2], seq: Optional[Iterable[T]], workers: int = max(int(CPU_COUNT / 4), 2)) -> Collection[T2]:
+    return CollectionImpl(seq).pmap_(f, workers)
 
 
 def cat(seq: Optional[Iterable[Iterable[T]]]) -> Collection[T]:

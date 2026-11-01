@@ -7,7 +7,6 @@ import concurrent.futures as conc
 from abc import abstractmethod
 from functools import cache, reduce
 from itertools import chain, groupby, takewhile, tee
-from multiprocessing import Pool
 from typing import (
     Any,
     Callable,
@@ -175,73 +174,80 @@ class Collection(Iterable[T]):
     
     
     def pmap(self, f: Callable[[T], S]) -> Collection[S]:
-        """Performes `map` in parallel. 
-        Uses "multiprocessing" lib.
-        Executes tasks in separate processes. Use for CPU bound tasks
+        """Perform ``map`` in parallel using separate processes.
+
+        Uses ``ProcessPoolExecutor`` with ``max(int(CPU_COUNT / 4), 2)`` workers.
+        Use for CPU-bound tasks.
 
         Args:
-            f (Callable[[T], S]): Fuction to map elements with
+            f (Callable[[T], S]): Function to map elements with.
+                Must be picklable (module-level function, not a lambda or closure).
 
         Returns:
-            icoll[S]: New collection.
+            Collection[S]: New collection.
         """
-        with Pool(max(int(CPU_COUNT / 4), 2)) as pool:
+        workers = max(int(CPU_COUNT / 4), 2)
+        with conc.ProcessPoolExecutor(max_workers=workers) as pool:
             __map = pool.map(f, self._coll)
         return self._mapping_step(__map)
     
     
-    def pmap_(self, f: Callable[[T], S], threads: int = int(CPU_COUNT / 4)) -> Collection[S]:
-        """Performed `map` in parallel. And a number of threads to use can be defined.
-        Uses "multiprocessing" lib.
-        Executes tasks in separate processes. Use for CPU bound tasks
+    def pmap_(self, f: Callable[[T], S], workers: int = max(int(CPU_COUNT / 4), 2)) -> Collection[S]:
+        """Perform ``map`` in parallel with a specified number of worker processes.
+
+        Uses ``ProcessPoolExecutor`` with ``workers`` processes.
+        Use for CPU-bound tasks.
 
         Args:
-            f (Callable[[T], S]): Function to map elements with
-            threads (int, optional): A number of async threads to use for maing. Defaults to CPU_COUNT.
+            f (Callable[[T], S]): Function to map elements with.
+                Must be picklable (module-level function, not a lambda or closure).
+            workers (int, optional): Number of worker processes. Defaults to ``max(int(CPU_COUNT / 4), 2)``.
 
         Returns:
-            icoll[S]: New collection
-        """        
-        assert threads >= 1, 'Async Thread count CAN NOT be < 1'
-        if threads == 1:
+            Collection[S]: New collection.
+        """
+        assert workers >= 1, 'Worker count MUST be >= 1'
+        if workers == 1:
             return self.map(f)
-        with Pool(threads) as p:
-            __map = p.map(f, self._coll)
+        with conc.ProcessPoolExecutor(max_workers=workers) as pool:
+            __map = pool.map(f, self._coll)
         return self._mapping_step(__map)
     
 
     def async_map(self, f: Callable[[T], S]) -> Collection[S]:
-        """Performes `map` asyncronously.
-        Uses "concur" lib.
-        Executes tasks in current process. Use for Disk/Network bound tasks
+        """Perform ``map`` asynchronously using a shared thread pool.
+
+        Uses ``TRENT_THREADPOOL`` (singleton ``ThreadPoolExecutor``) for I/O-bound tasks.
+        Threads are managed globally; the pool is shut down on process exit via ``atexit``.
 
         Args:
-            f (Callable[[T], S]): Fuction to map elements with
+            f (Callable[[T], S]): Function to map elements with.
 
         Returns:
-            icoll[S]: New collection.
-        """        
+            Collection[S]: New collection.
+        """
         __map = TRENT_THREADPOOL.map(f, self._coll)
         return self._mapping_step(__map)
-    
-    
+
+
     def async_map_(self, f: Callable[[T], S], threads: int = int(CPU_COUNT / 4)) -> Collection[S]:
-        """Performed `map` asyncronously. And a number of threads to use can be defined.
-        Uses "concur" lib.
-        Executes tasks in current process. Use for Disk/Network bound tasks
+        """Perform ``map`` asynchronously with a specified number of threads.
+
+        Creates a dedicated ``ThreadPoolExecutor`` for this call.
+        Use for I/O-bound tasks.
 
         Args:
-            f (Callable[[T], S]): Function to map elements with
-            threads (int, optional): A number of async threads to use for maing. Defaults to CPU_COUNT.
+            f (Callable[[T], S]): Function to map elements with.
+            threads (int, optional): Number of async threads. Defaults to ``int(CPU_COUNT / 4)``.
 
         Returns:
-            icoll[S]: New collection
-        """        
-        assert threads >= 1, 'Async Thread count CAN NOT be < 1'
+            Collection[S]: New collection.
+        """
+        assert threads >= 1, 'Async thread count MUST be >= 1'
         if threads == 1:
             return self.map(f)
-        with conc.ThreadPoolExecutor(threads, 'trent') as p:
-            __map = p.map(f, self._coll)
+        with conc.ThreadPoolExecutor(max_workers=threads, thread_name_prefix='trent') as pool:
+            __map = pool.map(f, self._coll)
         return self._mapping_step(__map)
     
 
@@ -532,27 +538,27 @@ class Collection(Iterable[T]):
     
 
     def async_partmap_(self, f: Callable[[Any], S], threads: Optional[int] = None, /) -> Collection[List[S]]:
-        """Asyncronous Map over elements in partitioned sequence (Sequence of Iterable[T]).
-        For convenience, if you want to map elements, without concatenating partitions.
-        WARNING: sequence elements MUST be iterables.
-        NOTE: Resulted partitions will be converted to lists, for consistency.
+        """Async ``map`` over elements in partitioned sequence (Sequence of Iterable[T]).
+
+        Creates a dedicated ``ThreadPoolExecutor`` per partition,
+        opened while that partition is being consumed (the result stays lazy).
+        Use for I/O-bound tasks on partitioned data.
 
         Args:
             f (Callable[[Any], S]): Callable to process sequence elements.
-            threads (Optional[int], optional): Number f async threads. Defaults to None.
+            threads (Optional[int], optional): Number of async threads. Defaults to ``CPU_COUNT * 2``.
 
         Returns:
-            icoll[List[S]]: New partitioned collection.
-        """        
+            Collection[List[S]]: New partitioned collection.
+        """
         __threads = threads if threads else CPU_COUNT * 2
         assert __threads >= 1, 'Async Thread count CAN NOT be < 1'
         if __threads == 1:
             return self.partmap(f)
-        def __f(__part: Iterable) -> Iterable[S]:
-            with conc.ThreadPoolExecutor(__threads, 'trent') as p:
-                __map = p.map(f, __part)
-                return __map
-        return self.map(__f).map(list) # type: ignore
+        def __f(__part: Iterable) -> List[S]:
+            with conc.ThreadPoolExecutor(max_workers=__threads, thread_name_prefix='trent') as pool:
+                return list(pool.map(f, __part))
+        return self.map(__f)
     
     
     # ==================================================================

@@ -1,3 +1,4 @@
+import pytest
 from typing import Iterable
 
 from trent.coll import CollectionImpl
@@ -99,11 +100,40 @@ def test_pmap_empty():
     assert c.to_list() == []
 
 
-def test_pmap_1_threads():
-    c = pmap_(_double, [1, 2, 3], threads=2)
+def test_pmap_1_workers():
+    c = pmap_(_double, [1, 2, 3], workers=2)
     assert isinstance(c, CollectionImpl)
     assert c.to_list() == [2, 4, 6]
 
+
+def test_pmap_method():
+    c = CollectionImpl([1, 2, 3]).pmap(_double)
+    assert isinstance(c, CollectionImpl)
+    assert c.to_list() == [2, 4, 6]
+
+
+def test_pmap_empty_method():
+    c = CollectionImpl([]).pmap(_double)
+    assert isinstance(c, CollectionImpl)
+    assert c.to_list() == []
+
+
+def test_pmap_with_iterator():
+    c = CollectionImpl(iter([1, 2, 3])).pmap(_double)
+    assert isinstance(c, CollectionImpl)
+    assert c.to_list() == [2, 4, 6]
+
+
+def test_pmap_workers_1():
+    """Single worker should fall back to sync map."""
+    c = CollectionImpl([1, 2, 3]).pmap_(_double, workers=1)
+    assert isinstance(c, CollectionImpl)
+    assert c.to_list() == [2, 4, 6]
+
+
+def test_pmap_workers_0_raises():
+    with pytest.raises(AssertionError):
+        CollectionImpl([1, 2, 3]).pmap_(_double, workers=0)
 
 
 # ======================================================
