@@ -105,6 +105,7 @@ def test_pmap_1_threads():
     assert c.to_list() == [2, 4, 6]
 
 
+
 # ======================================================
 #           TEST catmap
 
@@ -114,9 +115,12 @@ def _expand(x):
 
 
 def test_catmap_1():
+    # catmap semantics: "flatten then map" (see USER_GUIDE.md).
+    # [[1], [2]] is flattened to [1, 2], then each element is mapped by _expand.
+    # Result is NOT flattened (that is mapcat).
     c = catmap(_expand, [[1], [2]])
     assert isinstance(c, CollectionImpl)
-    assert c.to_list() == [1, 10, 2, 20]
+    assert c.to_list() == [[1, 10], [2, 20]]
 
 
 def test_catmap_empty():
